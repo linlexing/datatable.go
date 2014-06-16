@@ -3,6 +3,7 @@ datatable.go
 
 A memory table, similar to. Net DataTable
 
+http://godoc.org/github.com/linlexing/datatable.go
 
 #### exemple for base:
 
