@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"time"
 )
 
 const (
@@ -22,8 +21,13 @@ var (
 	ColumnNotFoundError = errors.New("the column not found")
 	RowNotFoundError    = errors.New("the row not found")
 	KeyValueExists      = errors.New("the key value aleary exists")
-	NotThisTableRow     = errors.New("the row not is this table's row")
+	//NotThisTableRow     = errors.New("the row not is this table's row")
+
 )
+
+func PrimaryKeyTypeError(t string) error {
+	return fmt.Errorf("primary key type [%s] invalid", t)
+}
 
 type ChangeRow struct {
 	Data       []interface{}
@@ -539,106 +543,6 @@ func (p *pkIndex) trueIndex(i int) int {
 
 	return p.index[i]
 }
-func lessSlices(v1, v2 []interface{}) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		//if reflect.DeepEqual(e1, e2) {
-		if e1 == e2 {
-			continue
-		} else {
-			return less(e1, e2)
-		}
-	}
-	if len(v1) < len(v2) {
-		return true
-	} else {
-		return false
-	}
-}
-
-//func nullableOff(v interface{}) interface{} {
-
-//	switch v.(type) {
-//	case sql.NullBool:
-//		return v.(sql.NullBool).Bool
-//	case sql.NullFloat64:
-//		return v.(sql.NullFloat64).Float64
-//	case sql.NullInt64:
-//		return v.(sql.NullInt64).Int64
-//	case sql.NullString:
-//		return v.(sql.NullString).String
-//	default:
-//		panic(fmt.Sprintf("type %#v invalid", v))
-//	}
-//}
-//func convertToNullableSlices(data []interface{}) []interface{} {
-//	result := []interface{}{}
-//	for _, v := range data {
-//		result = append(result, convertToNullable(v))
-//	}
-//	return result
-//}
-//func convertToNullable(v interface{}) interface{} {
-//	switch v.(type) {
-//	case bool:
-//		return sql.NullBool{Bool: v.(bool), Valid: true}
-//	case float64:
-//		return sql.NullFloat64{Float64: v.(float64), Valid: true}
-//	case int:
-//		return sql.NullInt64{Int64: int64(v.(int)), Valid: true}
-//	case int64:
-//		return sql.NullInt64{Int64: v.(int64), Valid: true}
-//	case string:
-//		return sql.NullString{String: v.(string), Valid: true}
-//	case sql.NullBool, sql.NullFloat64, sql.NullInt64, sql.NullString:
-//		return v
-//	default:
-//		panic(fmt.Sprintf("type %#v invalid", v))
-//	}
-
-//}
-func less(v1, v2 interface{}) bool {
-	//v1 = convertToNullable(v1)
-	//v2 = convertToNullable(v2)
-	if reflect.TypeOf(v1) != reflect.TypeOf(v2) {
-		return false
-	}
-	switch v1.(type) {
-	//case sql.NullBool:
-	//	vi := v1.(sql.NullBool)
-	//	vj := v2.(sql.NullBool)
-	//	return !vi.Valid || (vj.Valid && !vi.Bool)
-	//case sql.NullFloat64:
-	//	vi := v1.(sql.NullFloat64)
-	//	vj := v2.(sql.NullFloat64)
-	//	return !vi.Valid || (vj.Valid && vi.Float64 < vj.Float64)
-	//case sql.NullInt64:
-	//	vi := v1.(sql.NullInt64)
-	//	vj := v2.(sql.NullInt64)
-	//	return !vi.Valid || (vj.Valid && vi.Int64 < vj.Int64)
-	//case sql.NullString:
-	//	vi := v1.(sql.NullString)
-	//	vj := v2.(sql.NullString)
-	//	return !vi.Valid || (vj.Valid && vi.String < vj.String)
-	case string:
-		return v1.(string) < v2.(string)
-	case bool:
-		return !v1.(bool) && v2.(bool)
-	case float64:
-		return v1.(float64) < v2.(float64)
-	case int64:
-		return v1.(int64) < v2.(int64)
-	case int:
-		return v1.(int) < v2.(int)
-	case time.Time:
-		return v1.(time.Time).Before(v2.(time.Time))
-	default:
-		panic(fmt.Sprintf("type %#v invalid", v1))
-	}
-}
 func (d *DataTable) ColumnIndex(col string) int {
 	for i, c := range d.columns {
 		if c.Name == col {
@@ -675,6 +579,9 @@ func (p *pkIndex) Search(keys []interface{}) int {
 	})
 }
 
+//the primary key data type must in
+//int int64 float32 float64 string []byte time.Time
+//and/or above type's slice'
 func (d *DataTable) SetPK(names ...string) {
 	//需要验证每个column存在
 	pks := []*DataColumn{}
