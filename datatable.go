@@ -152,22 +152,6 @@ func (d *DataTable) AcceptChange() {
 	d.changed = false
 }
 
-/*func (d *DataTable) NewRow() *dataRow {
-	var data []interface{}
-	for _, c := range d.columns {
-		data = append(data, getNullValue(c.DataType))
-	}
-	return &dataRow{dataTable: d, data: data, index: -1}
-}
-
-func (d *DataTable) ApplyRow(row *dataRow) (err error) {
-	if row.index == -1 {
-		err = d.AddRow(row)
-	} else {
-		err = d.UpdateRow(row)
-	}
-	return
-}*/
 func (d *DataTable) RowCount() int {
 	return d.currentRows.Count()
 }
