@@ -64,27 +64,24 @@ func NewDataTable(name string) *DataTable {
 	d.primaryIndexes = pkIndex{dataTable: d}
 	return d
 }
-func (d *DataTable) ColumnByName(name string) (int, *DataColumn) {
 
-	for i, c := range d.columns {
-		if c.Name == name {
-			return i, c
-		}
-	}
-	return -1, nil
-}
 func (d *DataTable) AddColumn(c *DataColumn) *DataColumn {
-	if d.HasChange() {
-		return nil
-	}
-	if i, _ := d.ColumnByName(c.Name); i == -1 {
+
+	if i := d.ColumnIndex(c.Name); i == -1 {
 		d.currentRows.AddColumn(c.DataType)
 		d.deleteRows.AddColumn(c.DataType)
+		for i := 0; i < len(d.originData); i++ {
+			if c.NullValue != nil {
+				d.originData[i] = append(d.originData[i], c.NullValue)
+			} else {
+				d.originData[i] = append(d.originData[i], nil) //use nil ,maybe error
+			}
+		}
 		c.index = len(d.columns)
 		d.columns = append(d.columns, c)
 		return c
 	} else {
-		return nil
+		panic(ColumnExistsError)
 	}
 }
 func (d *DataTable) DeleteAll() {
@@ -682,10 +679,10 @@ func (d *DataTable) SetPK(names ...string) {
 	//需要验证每个column存在
 	pks := []*DataColumn{}
 	for _, c := range names {
-		if i, cc := d.ColumnByName(c); i == -1 {
+		if i := d.ColumnIndex(c); i == -1 {
 			panic(fmt.Errorf("column %s not found,at %v", c, d.Columns()))
 		} else {
-			pks = append(pks, cc)
+			pks = append(pks, d.Columns()[i])
 		}
 	}
 	d.primaryKeys = pks

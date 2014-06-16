@@ -1,27 +1,9 @@
 package datatable
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 )
 
-func copyMap(v map[string]interface{}) map[string]interface{} {
-	var network bytes.Buffer        // Stand-in for a network connection
-	enc := gob.NewEncoder(&network) // Will write to network.
-	dec := gob.NewDecoder(&network)
-	err := enc.Encode(v)
-	if err != nil {
-		panic(err)
-	}
-
-	q := map[string]interface{}{}
-	err = dec.Decode(&q)
-	if err != nil {
-		panic(err)
-	}
-	return q
-}
 func safeToStrings(s ...interface{}) []string {
 	r := make([]string, len(s), len(s))
 	for i, v := range s {

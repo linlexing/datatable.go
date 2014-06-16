@@ -14,25 +14,19 @@ type DataColumn struct {
 	Name      string
 	DataType  reflect.Type
 	NullValue interface{}
-	MaxSize   int
 }
 
+func (d *DataColumn) Index() int {
+	return d.index
+}
 func (d *DataColumn) Clone() *DataColumn {
 	result := DataColumn{}
 	result = *d
 	return &result
 }
-func (d *DataColumn) Object() map[string]interface{} {
-	return map[string]interface{}{
-		"index":    d.index,
-		"Name":     d.Name,
-		"DataType": d.DataType.String(),
-		"MaxSize":  d.MaxSize,
-	}
-}
 
-func NewDataColumn(name string, dataType reflect.Type, maxSize int) *DataColumn {
-	c := &DataColumn{Name: name, DataType: dataType, MaxSize: maxSize}
+func NewDataColumn(name string, dataType reflect.Type) *DataColumn {
+	c := &DataColumn{Name: name, DataType: dataType}
 	switch dataType.Kind() {
 	case reflect.String:
 		c.NullValue = ""
@@ -50,50 +44,50 @@ func NewDataColumn(name string, dataType reflect.Type, maxSize int) *DataColumn 
 	return c
 
 }
-func NewStringColumn(name string, maxSize int) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(string("")), maxSize)
+func NewStringColumn(name string) *DataColumn {
+	return NewDataColumn(name, reflect.TypeOf(string("")))
 }
 func NewFloat64Column(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(float64(0)), 0)
+	return NewDataColumn(name, reflect.TypeOf(float64(0)))
 }
 func NewInt64Column(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(int64(0)), 0)
+	return NewDataColumn(name, reflect.TypeOf(int64(0)))
 }
 func NewIntColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(int(0)), 0)
+	return NewDataColumn(name, reflect.TypeOf(int(0)))
 }
 func NewBoolColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(true), 0)
+	return NewDataColumn(name, reflect.TypeOf(true))
 }
 func NewByteaColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([]byte{}), 0)
+	return NewDataColumn(name, reflect.TypeOf([]byte{}))
 }
 func NewTimeColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(time.Now()), 0)
+	return NewDataColumn(name, reflect.TypeOf(time.Now()))
 }
 func NewJSONColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(map[string]interface{}{}), 0)
+	return NewDataColumn(name, reflect.TypeOf(map[string]interface{}{}))
 }
 
-func NewStringArrayColumn(name string, maxSize int) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([]string{}), maxSize)
+func NewStringArrayColumn(name string) *DataColumn {
+	return NewDataColumn(name, reflect.TypeOf([]string{}))
 }
 func NewFloat64ArrayColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([]float64{}), 0)
+	return NewDataColumn(name, reflect.TypeOf([]float64{}))
 }
 func NewInt64ArrayColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([]int64{}), 0)
+	return NewDataColumn(name, reflect.TypeOf([]int64{}))
 }
 
 func NewBoolArrayColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([]bool{}), 0)
+	return NewDataColumn(name, reflect.TypeOf([]bool{}))
 }
 func NewByteaArrayColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([][]byte{}), 0)
+	return NewDataColumn(name, reflect.TypeOf([][]byte{}))
 }
 func NewTimeArrayColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([]time.Time{}), 0)
+	return NewDataColumn(name, reflect.TypeOf([]time.Time{}))
 }
 func NewJSONArrayColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([]map[string]interface{}{}), 0)
+	return NewDataColumn(name, reflect.TypeOf([]map[string]interface{}{}))
 }

@@ -17,7 +17,7 @@ func TestBase(t *testing.T) {
 }
 func TestDataTable_AddColumns(t *testing.T) {
 	table := NewDataTable("Table1")
-	c := table.AddColumn(NewStringColumn("column1", -1))
+	c := table.AddColumn(NewStringColumn("column1"))
 	if c == nil {
 		t.Error("error")
 	}
@@ -27,15 +27,12 @@ func TestDataTable_AddColumns(t *testing.T) {
 }
 func TestDataTable_ColumnIndex(t *testing.T) {
 	table := NewDataTable("Table1")
-	c := table.AddColumn(NewStringColumn("column1", -1))
-	c.MaxSize = 100
+	c := table.AddColumn(NewStringColumn("column1"))
 	if c.index != 0 {
 		t.Error("error")
 	}
 	if v := table.Columns()[0]; v == nil {
 		t.Error("null")
-	} else if v.MaxSize != 100 {
-		t.Error("error")
 	}
 	c = table.AddColumn(NewInt64Column("column2"))
 	if c.index != 1 {
@@ -44,7 +41,7 @@ func TestDataTable_ColumnIndex(t *testing.T) {
 }
 func TestDataTable_PrimaryKey(t *testing.T) {
 	table := NewDataTable("Table1")
-	c1 := table.AddColumn(NewStringColumn("column1", -1))
+	c1 := table.AddColumn(NewStringColumn("column1"))
 	c2 := table.AddColumn(NewInt64Column("column2"))
 	table.SetPK("column1", "column2")
 
@@ -54,7 +51,7 @@ func TestDataTable_PrimaryKey(t *testing.T) {
 }
 func TestDataTable_NoPrimaryKey(t *testing.T) {
 	table := NewDataTable("Table1")
-	table.AddColumn(NewStringColumn("column1", -1))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewInt64Column("column2"))
 	err := table.AddValues("11", int64(11))
 	if err != nil {
@@ -75,7 +72,7 @@ func TestMemory(t *testing.T) {
 }
 func TestDataTable_AlterColumn(t *testing.T) {
 	table := NewDataTable("Table1")
-	table.AddColumn(NewStringColumn("column1", -1))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewInt64Column("column2"))
 	table.SetPK("column1", "column2")
 	table.AddRow(map[string]interface{}{
@@ -87,16 +84,16 @@ func TestDataTable_AlterColumn(t *testing.T) {
 		"Column2": int64(0),
 	})
 
-	c := table.AddColumn(NewStringColumn("column3", -1))
-	if c != nil {
+	c := table.AddColumn(NewStringColumn("column3"))
+	if c == nil {
 		t.Error("error")
 	}
 }
 func CreateTestData() *DataTable {
 	table := NewDataTable("Table1")
-	table.AddColumn(NewStringColumn("column1", -1))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewIntColumn("column2"))
-	table.AddColumn(NewStringColumn("column3", -1))
+	table.AddColumn(NewStringColumn("column3"))
 	table.SetPK("column1", "column2")
 	table.AddValues("first", 10, "test1")
 	table.AddValues("second", 1, "test")
@@ -107,7 +104,7 @@ func CreateTestData() *DataTable {
 }
 func TestDataTable_Data(t *testing.T) {
 	table := NewDataTable("Table1")
-	table.AddColumn(NewStringColumn("column1", -1))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewInt64Column("column2"))
 	table.SetPK("column1", "column2")
 
@@ -260,10 +257,10 @@ func Benchmark_SetPKValues(b *testing.B) {
 }
 func CreateBenchmarkData(row, column int) *DataTable {
 	table := NewDataTable("Table1")
-	table.AddColumn(NewStringColumn("column1", -1))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewIntColumn("column2"))
 	for i := 2; i < column; i++ {
-		table.AddColumn(NewStringColumn(fmt.Sprintf("column%v", i+1), -1))
+		table.AddColumn(NewStringColumn(fmt.Sprintf("column%v", i+1)))
 	}
 	for i := 0; i < row; i++ {
 
@@ -280,10 +277,10 @@ func CreateBenchmarkData(row, column int) *DataTable {
 }
 func Benchmark_AddRowNoPrimaryKeys(b *testing.B) {
 	table := NewDataTable("Table1")
-	table.AddColumn(NewStringColumn("column1", -1))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewInt64Column("column2"))
 	for i := 0; i < 30; i++ {
-		table.AddColumn(NewStringColumn(fmt.Sprintf("column%v", i+3), -1))
+		table.AddColumn(NewStringColumn(fmt.Sprintf("column%v", i+3)))
 
 	}
 	b.ResetTimer()
@@ -327,14 +324,14 @@ func Benchmark_GetRow(b *testing.B) {
 }
 func ExampleDataTable_AddValues() {
 	table := NewDataTable("table1")
-	table.AddColumn(NewStringColumn("column1", -1))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewIntColumn("column2"))
-	table.AddColumn(NewStringColumn("column3", -1))
-	table.AddColumn(NewStringColumn("column4", -1))
-	table.AddColumn(NewStringColumn("column5", -1))
-	table.AddColumn(NewStringColumn("column6", -1))
-	table.AddColumn(NewStringColumn("column7", -1))
-	table.AddColumn(NewStringColumn("column8", -1))
+	table.AddColumn(NewStringColumn("column3"))
+	table.AddColumn(NewStringColumn("column4"))
+	table.AddColumn(NewStringColumn("column5"))
+	table.AddColumn(NewStringColumn("column6"))
+	table.AddColumn(NewStringColumn("column7"))
+	table.AddColumn(NewStringColumn("column8"))
 	table.SetPK("column2", "column1")
 	for i := 10; i >= 1; i-- {
 		table.AddValues(fmt.Sprint("row", i), i, "field3", "field4", "field5", "field6", "field7", "field8")
@@ -368,7 +365,7 @@ func ExampleDataTable_AddValues() {
 }
 func TestGetColumnValues(t *testing.T) {
 	table := NewDataTable("table1")
-	table.AddColumn(NewStringColumn("column1", 0))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddValues("1")
 	table.AddValues("2")
 	arr := table.GetColumnValues(0)
@@ -378,7 +375,7 @@ func TestGetColumnValues(t *testing.T) {
 }
 func TestNullValue(t *testing.T) {
 	table := NewDataTable("table1")
-	table.AddColumn(NewStringColumn("column1", 0))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewInt64Column("column2"))
 	table.AddColumn(NewFloat64Column("column3"))
 	table.AddColumn(NewTimeColumn("column4"))
@@ -396,7 +393,7 @@ func TestNullValue(t *testing.T) {
 }
 func TestHasChange(t *testing.T) {
 	table := NewDataTable("table1")
-	table.AddColumn(NewStringColumn("column1", 0))
+	table.AddColumn(NewStringColumn("column1"))
 	table.AddColumn(NewInt64Column("column2"))
 	if table.HasChange() == true {
 		t.Error("error")
@@ -433,7 +430,7 @@ func TestArrayColumn(t *testing.T) {
 	if table.AddColumn(NewByteaArrayColumn("column1")) == nil {
 		t.Error("is nil")
 	}
-	if table.AddColumn(NewStringArrayColumn("column2", 0)) == nil {
+	if table.AddColumn(NewStringArrayColumn("column2")) == nil {
 		t.Error("is nil")
 	}
 	row := []interface{}{[][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, []string{"22", "33"}}
