@@ -325,7 +325,7 @@ func Benchmark_GetRow(b *testing.B) {
 	}
 	b.SetBytes(140)
 }
-func ExampleDataTable_AddRow() {
+func ExampleDataTable_AddValues() {
 	table := NewDataTable("table1")
 	table.AddColumn(NewStringColumn("column1", -1))
 	table.AddColumn(NewIntColumn("column2"))
