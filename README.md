@@ -9,7 +9,7 @@ http://godoc.org/github.com/linlexing/datatable.go
 
 ```go
 table := NewDataTable("Table1")
-table.AddColumn(NewStringColumn("column1"))
+table.AddColumn(NewStringColumn("column1",-1))
 table.AddColumn(NewInt64Column("column2"))
 table.SetPK("column1")
 table.AddRow(map[string]interface{}{
@@ -24,7 +24,7 @@ row2 := table.GetRow(1)
 
 ```go
 table := NewDataTable("Table1")
-table.AddColumn(NewStringColumn("column1"))
+table.AddColumn(NewStringColumn("column1",-1))
 table.AddColumn(NewInt64Column("column2"))
 table.SetPK("column1")
 table.AddValues("row1",int64(1))
@@ -40,7 +40,7 @@ if foundIndex := table.Find("row1");foundIndex == -1{
 
 ```go
 table := NewDataTable("Table1")
-table.AddColumn(NewStringColumn("column1"))
+table.AddColumn(NewStringColumn("column1",-1))
 table.AddColumn(NewInt64Column("column2"))
 table.SetPK("column1")
 table.AddValues("row1",int64(1))
