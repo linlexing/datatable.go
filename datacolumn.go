@@ -10,10 +10,11 @@ import (
 var DataTypeError = errors.New("datatype error")
 
 type DataColumn struct {
-	index     int
-	Name      string
-	DataType  reflect.Type
-	NullValue interface{}
+	index        int
+	Name         string
+	DataType     reflect.Type
+	ReversalNull bool //when retrieving data that auto convert the NullValue to nil,default is true
+	NullValue    interface{}
 }
 
 func (d *DataColumn) Index() int {
@@ -26,10 +27,12 @@ func (d *DataColumn) Clone() *DataColumn {
 }
 
 func NewDataColumn(name string, dataType reflect.Type) *DataColumn {
-	c := &DataColumn{Name: name, DataType: dataType}
+	c := &DataColumn{Name: name, DataType: dataType, ReversalNull: true}
 	switch dataType.Kind() {
 	case reflect.String:
 		c.NullValue = ""
+	case reflect.Float32:
+		c.NullValue = math.SmallestNonzeroFloat32
 	case reflect.Float64:
 		c.NullValue = math.SmallestNonzeroFloat64
 	case reflect.Int64:

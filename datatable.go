@@ -179,27 +179,9 @@ func (d *DataTable) ColumnCount() int {
 	return len(d.columns)
 }
 func (d *DataTable) SetValues(rowIndex int, values ...interface{}) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
-			// find out exactly what the error was and set err
-			switch x := r.(type) {
-			case string:
-				err = errors.New(x)
-			case error:
-				err = x
-			default:
-				err = errors.New("Unknown panic")
-			}
-			// invalidate rep
-		}
-	}()
-	if rowIndex < 0 || rowIndex >= d.currentRows.Count() {
-		return RowNotFoundError
-	}
 	newValues := d.encodeRowNull(values)
 	if len(newValues) != len(d.columns) {
-		panic(ColumnNotFoundError)
+		return ColumnNotFoundError
 	}
 
 	trueIndex := d.primaryIndexes.trueIndex(rowIndex)
@@ -271,6 +253,9 @@ func (d *DataTable) encodeRowNull(vs []interface{}) []interface{} {
 	copy(newValues, vs)
 	for i, c := range d.columns {
 		if newValues[i] == nil {
+			if c.NullValue == nil {
+				panic(fmt.Sprintf("the column [%s] value is null(type:%s),but the column's NullValue property is nil,can't store the null value.", c.Name, c.DataType.String()))
+			}
 			newValues[i] = c.NullValue
 		}
 	}
@@ -279,7 +264,7 @@ func (d *DataTable) encodeRowNull(vs []interface{}) []interface{} {
 }
 func (d *DataTable) decodeRowNull(vs []interface{}) []interface{} {
 	for i, c := range d.columns {
-		if c.NullValue != nil {
+		if c.ReversalNull && c.NullValue != nil {
 			if vs[i] == c.NullValue {
 				vs[i] = nil
 			}
@@ -367,7 +352,7 @@ func (d *DataTable) GetColumnStrings(columnIndex int) []string {
 }
 func (d *DataTable) GetValue(rowIndex, colIndex int) interface{} {
 	v := d.currentRows.Get(d.primaryIndexes.trueIndex(rowIndex), colIndex)
-	if d.Columns()[colIndex].NullValue != nil && v == d.Columns()[colIndex].NullValue {
+	if d.Columns()[colIndex].ReversalNull && d.Columns()[colIndex].NullValue != nil && v == d.Columns()[colIndex].NullValue {
 		v = nil
 	}
 	return v
@@ -454,23 +439,8 @@ func (d *DataTable) DeleteRow(rowIndex int) error {
 	return nil
 }
 func (d *DataTable) AddValues(vs ...interface{}) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
-			// find out exactly what the error was and set err
-			switch x := r.(type) {
-			case string:
-				err = errors.New(x)
-			case error:
-				err = x
-			default:
-				err = errors.New("Unknown panic")
-			}
-			// invalidate rep
-		}
-	}()
 	if len(vs) != len(d.columns) {
-		panic(ColumnNotFoundError)
+		return ColumnNotFoundError
 	}
 	data := d.encodeRowNull(vs)
 	keyvalues := d.getPkValues(data)
@@ -581,7 +551,7 @@ func (p *pkIndex) Search(keys []interface{}) int {
 
 //the primary key data type must in
 //int int64 float32 float64 string []byte time.Time
-//and/or above type's slice'
+//and/or above type's slice
 func (d *DataTable) SetPK(names ...string) {
 	//需要验证每个column存在
 	pks := []*DataColumn{}
