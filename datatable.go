@@ -75,11 +75,7 @@ func (d *DataTable) AddColumn(c *DataColumn) *DataColumn {
 		d.currentRows.AddColumn(c.DataType)
 		d.deleteRows.AddColumn(c.DataType)
 		for i := 0; i < len(d.originData); i++ {
-			if c.NullValue != nil {
-				d.originData[i] = append(d.originData[i], c.NullValue)
-			} else {
-				d.originData[i] = append(d.originData[i], nil) //use nil ,maybe error
-			}
+			d.originData[i] = append(d.originData[i], c.ZeroValue()) //use nil ,maybe error
 		}
 		c.index = len(d.columns)
 		d.columns = append(d.columns, c)
@@ -157,12 +153,16 @@ func (d *DataTable) RowCount() int {
 	return d.currentRows.Count()
 }
 func (d *DataTable) GetValues(rowIndex int) []interface{} {
-	return d.decodeRowNull(d.currentRows.GetRow(d.primaryIndexes.trueIndex(rowIndex)))
+	return d.currentRows.GetRow(d.primaryIndexes.trueIndex(rowIndex))
 }
 func (d *DataTable) getSequenceValues(r map[string]interface{}) []interface{} {
 	vals := make([]interface{}, d.ColumnCount())
 	for i, col := range d.columns {
-		vals[i] = r[col.Name]
+		var ok bool
+		if vals[i], ok = r[col.Name]; !ok {
+			panic(fmt.Errorf("can't find column:[%s] at %v", col.Name, r))
+		}
+
 	}
 	return vals
 
@@ -179,7 +179,7 @@ func (d *DataTable) ColumnCount() int {
 	return len(d.columns)
 }
 func (d *DataTable) SetValues(rowIndex int, values ...interface{}) (err error) {
-	newValues := d.encodeRowNull(values)
+	newValues := values
 	if len(newValues) != len(d.columns) {
 		return ColumnNotFoundError
 	}
@@ -248,30 +248,6 @@ func (d *DataTable) Find(data ...interface{}) int {
 	}
 
 }
-func (d *DataTable) encodeRowNull(vs []interface{}) []interface{} {
-	newValues := make([]interface{}, len(vs), len(vs))
-	copy(newValues, vs)
-	for i, c := range d.columns {
-		if newValues[i] == nil {
-			if c.NullValue == nil {
-				panic(fmt.Sprintf("the column [%s] value is null(type:%s),but the column's NullValue property is nil,can't store the null value.", c.Name, c.DataType.String()))
-			}
-			newValues[i] = c.NullValue
-		}
-	}
-
-	return newValues
-}
-func (d *DataTable) decodeRowNull(vs []interface{}) []interface{} {
-	for i, c := range d.columns {
-		if c.ReversalNull && c.NullValue != nil {
-			if vs[i] == c.NullValue {
-				vs[i] = nil
-			}
-		}
-	}
-	return vs
-}
 
 func (d *DataTable) GetOriginRow(rowIndex int) map[string]interface{} {
 
@@ -280,7 +256,7 @@ func (d *DataTable) GetOriginRow(rowIndex int) map[string]interface{} {
 	case UNCHANGE:
 		return d.GetRow(rowIndex)
 	case UPDATE:
-		vals := d.decodeRowNull(d.originData[trueIndex])
+		vals := d.originData[trueIndex]
 		result := map[string]interface{}{}
 		for i, col := range d.columns {
 			result[col.Name] = vals[i]
@@ -331,12 +307,7 @@ func (d *DataTable) GetColumnValues(columnIndex int) []interface{} {
 	newValues := make([]interface{}, icount, icount)
 	for i := 0; i < icount; i++ {
 		v := reflect.ValueOf(d.currentRows.data[columnIndex]).Index(i)
-		if d.columns[columnIndex].NullValue != nil &&
-			reflect.DeepEqual(v, d.columns[columnIndex].NullValue) {
-			newValues[i] = nil
-		} else {
-			newValues[i] = v.Interface()
-		}
+		newValues[i] = v.Interface()
 	}
 	return newValues
 }
@@ -351,11 +322,7 @@ func (d *DataTable) GetColumnStrings(columnIndex int) []string {
 	}
 }
 func (d *DataTable) GetValue(rowIndex, colIndex int) interface{} {
-	v := d.currentRows.Get(d.primaryIndexes.trueIndex(rowIndex), colIndex)
-	if d.Columns()[colIndex].ReversalNull && d.Columns()[colIndex].NullValue != nil && v == d.Columns()[colIndex].NullValue {
-		v = nil
-	}
-	return v
+	return d.currentRows.Get(d.primaryIndexes.trueIndex(rowIndex), colIndex)
 }
 func (d *DataTable) GetRow(rowIndex int) map[string]interface{} {
 	vals := d.GetValues(rowIndex)
@@ -373,7 +340,7 @@ func (d *DataTable) getChangeInsert() []*ChangeRow {
 	for i, status := range d.rowStatus {
 		if status == INSERT {
 			result = append(result, &ChangeRow{
-				Data: d.decodeRowNull(d.currentRows.GetRow(i)),
+				Data: d.currentRows.GetRow(i),
 			})
 		}
 	}
@@ -384,8 +351,8 @@ func (d *DataTable) getChangeUpdate() []*ChangeRow {
 	for i, status := range d.rowStatus {
 		if status == UPDATE {
 			result = append(result, &ChangeRow{
-				Data:       d.decodeRowNull(d.currentRows.GetRow(i)),
-				OriginData: d.decodeRowNull(d.originData[i]),
+				Data:       d.currentRows.GetRow(i),
+				OriginData: d.originData[i],
 			})
 		}
 	}
@@ -396,7 +363,7 @@ func (d *DataTable) getChangeDelete() []*ChangeRow {
 	for i := 0; i < d.deleteRows.Count(); i++ {
 
 		result = append(result, &ChangeRow{
-			Data: d.decodeRowNull(d.deleteRows.GetRow(i)),
+			Data: d.deleteRows.GetRow(i),
 		})
 	}
 	return result
@@ -439,19 +406,11 @@ func (d *DataTable) DeleteRow(rowIndex int) error {
 	return nil
 }
 
-//Assign each column empty value pointer,General used by database/sql scan
-func (d *DataTable) NewValues() []interface{} {
-	result := make([]interface{}, d.ColumnCount())
-	for i, c := range d.Columns() {
-		result[i] = c.NewPtrValue()
-	}
-	return result
-}
 func (d *DataTable) AddValues(vs ...interface{}) (err error) {
 	if len(vs) != len(d.columns) {
 		return ColumnNotFoundError
 	}
-	data := d.encodeRowNull(vs)
+	data := vs
 	keyvalues := d.getPkValues(data)
 	newKeyIndex := d.primaryIndexes.Search(keyvalues)
 	if len(d.primaryKeys) > 0 && newKeyIndex < d.primaryIndexes.Len() &&

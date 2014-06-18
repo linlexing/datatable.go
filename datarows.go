@@ -30,7 +30,6 @@ func (r *dataRows) AddColumn(t reflect.Type) {
 	return
 }
 func (r *dataRows) AddRow(values []interface{}) {
-
 	for i, _ := range r.data {
 		r.data[i] = reflect.Append(reflect.ValueOf(r.data[i]), reflect.ValueOf(values[i])).Interface()
 	}

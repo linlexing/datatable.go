@@ -76,12 +76,12 @@ func TestDataTable_AlterColumn(t *testing.T) {
 	table.AddColumn(NewInt64Column("column2"))
 	table.SetPK("column1", "column2")
 	table.AddRow(map[string]interface{}{
-		"Column1": "test",
-		"Column2": int64(12),
+		"column1": "test",
+		"column2": int64(12),
 	})
 	table.AddRow(map[string]interface{}{
-		"Column1": "test1",
-		"Column2": int64(0),
+		"column1": "test1",
+		"column2": int64(0),
 	})
 
 	c := table.AddColumn(NewStringColumn("column3"))
@@ -110,6 +110,7 @@ func TestDataTable_Data(t *testing.T) {
 
 	table.AddRow(map[string]interface{}{
 		"column1": "test",
+		"column2": int64(3),
 	})
 	if table.RowCount() != 1 {
 		t.Error("error")
@@ -121,7 +122,7 @@ func TestDataTable_Data(t *testing.T) {
 	if r["column1"] != "test" {
 		t.Error("error")
 	}
-	if r["column2"] != nil {
+	if r["column2"] != int64(3) {
 		t.Error("error")
 	}
 	r["column2"] = int64(12)
@@ -373,24 +374,6 @@ func TestGetColumnValues(t *testing.T) {
 		t.Error("error")
 	}
 }
-func TestNullValue(t *testing.T) {
-	table := NewDataTable("table1")
-	table.AddColumn(NewStringColumn("column1"))
-	table.AddColumn(NewInt64Column("column2"))
-	table.AddColumn(NewFloat64Column("column3"))
-	table.AddColumn(NewTimeColumn("column4"))
-	table.AddColumn(NewBoolColumn("column5"))
-	vs := []interface{}{nil, nil, nil, nil, false}
-	if err := table.AddValues(vs...); err != nil {
-		t.Error(err)
-		return
-	}
-	arr := table.GetValues(0)
-
-	if !reflect.DeepEqual(arr, []interface{}{nil, nil, nil, nil, false}) {
-		t.Error("error")
-	}
-}
 func TestHasChange(t *testing.T) {
 	table := NewDataTable("table1")
 	table.AddColumn(NewStringColumn("column1"))
@@ -427,10 +410,10 @@ func TestByteaColumn(t *testing.T) {
 }
 func TestArrayColumn(t *testing.T) {
 	table := NewDataTable("table1")
-	if table.AddColumn(NewByteaArrayColumn("column1")) == nil {
+	if table.AddColumn(NewDataColumn("column1", reflect.TypeOf([][]byte{}))) == nil {
 		t.Error("is nil")
 	}
-	if table.AddColumn(NewStringArrayColumn("column2")) == nil {
+	if table.AddColumn(NewDataColumn("column2", reflect.TypeOf([]string{}))) == nil {
 		t.Error("is nil")
 	}
 	row := []interface{}{[][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, []string{"22", "33"}}
