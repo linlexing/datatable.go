@@ -2,6 +2,7 @@ package datatable
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"reflect"
 	"time"
@@ -19,14 +20,12 @@ type DataColumn struct {
 
 //alloc empty value,return pointer the value
 func (d *DataColumn) NewPtrValue() interface{} {
-	switch d.DataType.Kind() {
-	case reflect.Slice:
-		return reflect.MakeSlice(d.DataType, 0, 0).Addr().Interface()
-	case reflect.Map:
-		return reflect.MakeMap(d.DataType).Addr().Interface()
-	default:
-		return reflect.New(d.DataType).Interface()
-	}
+	defer func() {
+		if f := recover(); f != nil {
+			panic(fmt.Sprintf("%s,type:%s", f, d.DataType))
+		}
+	}()
+	return reflect.New(d.DataType).Interface()
 }
 func (d *DataColumn) Index() int {
 	return d.index
