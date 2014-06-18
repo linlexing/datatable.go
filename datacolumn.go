@@ -17,6 +17,17 @@ type DataColumn struct {
 	NullValue    interface{}
 }
 
+//alloc empty value,return pointer the value
+func (d *DataColumn) NewPtrValue() interface{} {
+	switch d.DataType.Kind() {
+	case reflect.Slice:
+		return reflect.MakeSlice(d.DataType, 0, 0).Addr().Interface()
+	case reflect.Map:
+		return reflect.MakeMap(d.DataType).Addr().Interface()
+	default:
+		return reflect.New(d.DataType).Interface()
+	}
+}
 func (d *DataColumn) Index() int {
 	return d.index
 }

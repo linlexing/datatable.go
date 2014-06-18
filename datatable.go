@@ -438,6 +438,15 @@ func (d *DataTable) DeleteRow(rowIndex int) error {
 
 	return nil
 }
+
+//Assign each column empty value pointer,General used by database/sql scan
+func (d *DataTable) NewValues() []interface{} {
+	result := make([]interface{}, d.ColumnCount())
+	for i, c := range d.Columns() {
+		result[i] = c.NewPtrValue()
+	}
+	return result
+}
 func (d *DataTable) AddValues(vs ...interface{}) (err error) {
 	if len(vs) != len(d.columns) {
 		return ColumnNotFoundError
