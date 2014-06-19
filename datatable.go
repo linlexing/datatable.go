@@ -17,14 +17,20 @@ const (
 )
 
 var (
-	ColumnExistsError   = errors.New("the column exists")
-	ColumnNotFoundError = errors.New("the column not found")
-	RowNotFoundError    = errors.New("the row not found")
-	KeyValueExists      = errors.New("the key value aleary exists")
+	ColumnExistsError = errors.New("the column exists")
+	RowNotFoundError  = errors.New("the row not found")
+	KeyValueExists    = errors.New("the key value aleary exists")
 	//NotThisTableRow     = errors.New("the row not is this table's row")
 
 )
 
+func NumberOfValueError(valNum, colNum int) error {
+
+	return fmt.Errorf("number of value :%d != column count: %d", valNum, colNum)
+}
+func ColumnNotFoundError(cname string) error {
+	return fmt.Errorf("the column [%s] not found", cname)
+}
 func PrimaryKeyTypeError(t string) error {
 	return fmt.Errorf("primary key type [%s] invalid", t)
 }
@@ -180,8 +186,8 @@ func (d *DataTable) ColumnCount() int {
 }
 func (d *DataTable) SetValues(rowIndex int, values ...interface{}) (err error) {
 	newValues := values
-	if len(newValues) != len(d.columns) {
-		return ColumnNotFoundError
+	if len(newValues) != d.ColumnCount() {
+		return NumberOfValueError(len(newValues), d.ColumnCount())
 	}
 
 	trueIndex := d.primaryIndexes.trueIndex(rowIndex)
@@ -407,8 +413,8 @@ func (d *DataTable) DeleteRow(rowIndex int) error {
 }
 
 func (d *DataTable) AddValues(vs ...interface{}) (err error) {
-	if len(vs) != len(d.columns) {
-		return ColumnNotFoundError
+	if len(vs) != d.ColumnCount() {
+		return NumberOfValueError(len(vs), d.ColumnCount())
 	}
 	data := vs
 	keyvalues := d.getPkValues(data)
