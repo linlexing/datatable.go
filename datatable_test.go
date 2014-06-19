@@ -407,6 +407,14 @@ func TestByteaColumn(t *testing.T) {
 	if !reflect.DeepEqual([]byte{1, 2, 3}, table.GetValue(0, 0)) {
 		t.Error("error")
 	}
+	row = []interface{}{[]byte(nil), int64(44)}
+	if err := table.AddValues(row...); err != nil {
+		t.Error(err, ",lenght:", len(row), ",columnLen:", table.ColumnCount())
+	}
+	if len(table.GetValue(1, 0).([]byte)) != 0 {
+		t.Error(fmt.Sprintf("error:%T", table.GetValue(1, 0)))
+	}
+
 }
 func TestArrayColumn(t *testing.T) {
 	table := NewDataTable("table1")
@@ -421,6 +429,10 @@ func TestArrayColumn(t *testing.T) {
 		t.Error(err, ",lenght:", len(row), ",columnLen:", table.ColumnCount())
 	}
 	if !reflect.DeepEqual([][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, table.GetValue(0, 0)) {
+		t.Error("error")
+	}
+	table.SetPK("column1", "column2")
+	if table.Find([][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, []string{"22", "33"}) < 0 {
 		t.Error("error")
 	}
 }

@@ -28,191 +28,245 @@ func safeToString(s interface{}) string {
 	}
 
 }
-func lessSlices(v1, v2 []interface{}) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		//if reflect.DeepEqual(e1, e2) {
-		if e1 == e2 {
-			continue
-		} else {
-			return less(e1, e2)
-		}
-	}
-	return len(v1) < len(v2)
-}
-func lessStringSlice(v1, v2 []string) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if e1 == e2 {
-			continue
-		} else {
-			return e1 < e2
-		}
-	}
-	return len(v1) < len(v2)
-}
-func lessBoolSlice(v1, v2 []bool) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if e1 == e2 {
-			continue
-		} else {
-			return !e1 && e2
-		}
-	}
-	return len(v1) < len(v2)
-}
-func lessIntSlice(v1, v2 []int) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if e1 == e2 {
-			continue
-		} else {
-			return e1 < e2
-		}
-	}
-	return len(v1) < len(v2)
-}
-func lessInt64Slice(v1, v2 []int64) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if e1 == e2 {
-			continue
-		} else {
-			return e1 < e2
-		}
-	}
-	return len(v1) < len(v2)
-}
-func lessFloat64Slice(v1, v2 []float64) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if e1 == e2 {
-			continue
-		} else {
-			return e1 < e2
-		}
-	}
-	return len(v1) < len(v2)
-}
-func lessFloat32Slice(v1, v2 []float32) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if e1 == e2 {
-			continue
-		} else {
-			return e1 < e2
-		}
-	}
-	return len(v1) < len(v2)
-}
-func lessTimeSlice(v1, v2 []time.Time) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if e1 == e2 {
-			continue
-		} else {
-			return e1.Before(e2)
-		}
-	}
-	return len(v1) < len(v2)
-}
-func lessBytea(v1, v2 []byte) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if e1 == e2 {
-			continue
-		} else {
-			return e1 < e2
-		}
-	}
-	return len(v1) < len(v2)
-}
-func equBytea(v1, v2 []byte) bool {
-	if len(v1) != len(v2) {
-		return false
-	}
-	for i := 0; i < len(v1); i++ {
-		if v1[i] != v2[i] {
-			return false
-		}
-	}
-	return true
-}
-func lessByteaSlice(v1, v2 [][]byte) bool {
-	for i, e1 := range v1 {
-		if i >= len(v2) {
-			return false
-		}
-		e2 := v2[i]
-		if equBytea(e1, e2) {
-			continue
-		} else {
-			return lessBytea(e1, e2)
-		}
-	}
-	return len(v1) < len(v2)
-}
-func less(v1, v2 interface{}) bool {
+
+//0-equ -1 less 1 large
+func cmpValue(v1, v2 interface{}) int {
 	switch v1.(type) {
+	case []interface{}:
+		for i, e1 := range v1.([]interface{}) {
+			if i >= len(v2.([]interface{})) {
+				return 1
+			}
+			oneCmp := cmpValue(e1, v2.([]interface{})[i])
+			if oneCmp == 0 {
+				continue
+			}
+			return oneCmp
+		}
+		if len(v1.([]interface{})) == len(v2.([]interface{})) {
+			return 0
+		}
+		return -1
 	case string:
-		return v1.(string) < v2.(string)
+		if v1.(string) == v2.(string) {
+			return 0
+		}
+		if v1.(string) < v2.(string) {
+			return -1
+		}
+		return 1
 	case bool:
-		return !v1.(bool) && v2.(bool)
+		if v1.(bool) && v2.(bool) || !v1.(bool) && !v2.(bool) {
+			return 0
+		}
+		if !v1.(bool) && v2.(bool) {
+			return -1
+		}
+		return 1
 	case float64:
-		return v1.(float64) < v2.(float64)
+		if v1.(float64) == v2.(float64) {
+			return 0
+		}
+		if v1.(float64) < v2.(float64) {
+			return -1
+		}
+		return 1
+	case byte:
+		if v1.(byte) == v2.(byte) {
+			return 0
+		}
+		if v1.(byte) < v2.(byte) {
+			return -1
+		}
+		return 1
 	case int64:
-		return v1.(int64) < v2.(int64)
+		if v1.(int64) == v2.(int64) {
+			return 0
+		}
+		if v1.(int64) < v2.(int64) {
+			return -1
+		}
+		return 1
 	case int:
-		return v1.(int) < v2.(int)
+		if v1.(int) == v2.(int) {
+			return 0
+		}
+		if v1.(int) < v2.(int) {
+			return -1
+		}
+		return 1
 	case time.Time:
-		return v1.(time.Time).Before(v2.(time.Time))
+		if v1.(time.Time).Equal(v2.(time.Time)) {
+			return 0
+		}
+		if v1.(time.Time).Before(v2.(time.Time)) {
+			return -1
+		}
+		return 1
 	case []byte:
-		return lessBytea(v1.([]byte), v2.([]byte))
+		return cmpBytea(v1.([]byte), v2.([]byte))
 	case []string:
-		return lessStringSlice(v1.([]string), v2.([]string))
+		return cmpStringSlice(v1.([]string), v2.([]string))
 	case []bool:
-		return lessBoolSlice(v1.([]bool), v2.([]bool))
+		return cmpBoolSlice(v1.([]bool), v2.([]bool))
 	case []float64:
-		return lessFloat64Slice(v1.([]float64), v2.([]float64))
+		return cmpFloat64Slice(v1.([]float64), v2.([]float64))
 	case []float32:
-		return lessFloat32Slice(v1.([]float32), v2.([]float32))
+		return cmpFloat32Slice(v1.([]float32), v2.([]float32))
 	case []int64:
-		return lessInt64Slice(v1.([]int64), v2.([]int64))
+		return cmpInt64Slice(v1.([]int64), v2.([]int64))
 	case []int:
-		return lessIntSlice(v1.([]int), v2.([]int))
+		return cmpIntSlice(v1.([]int), v2.([]int))
 	case []time.Time:
-		return lessTimeSlice(v1.([]time.Time), v2.([]time.Time))
+		return cmpTimeSlice(v1.([]time.Time), v2.([]time.Time))
 	case [][]byte:
-		return lessByteaSlice(v1.([][]byte), v2.([][]byte))
+		return cmpByteaSlice(v1.([][]byte), v2.([][]byte))
 	default:
 		panic(PrimaryKeyTypeError(reflect.TypeOf(v1).String()))
 	}
+}
+
+func cmpStringSlice(v1, v2 []string) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
+}
+func cmpBoolSlice(v1, v2 []bool) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
+}
+func cmpIntSlice(v1, v2 []int) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
+}
+func cmpInt64Slice(v1, v2 []int64) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
+}
+func cmpFloat64Slice(v1, v2 []float64) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
+}
+func cmpFloat32Slice(v1, v2 []float32) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
+}
+func cmpTimeSlice(v1, v2 []time.Time) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
+}
+func cmpBytea(v1, v2 []byte) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
+}
+func cmpByteaSlice(v1, v2 [][]byte) int {
+	for i, e1 := range v1 {
+		if i >= len(v2) {
+			return 1
+		}
+		oneCmp := cmpValue(e1, v2[i])
+		if oneCmp == 0 {
+			continue
+		}
+		return oneCmp
+	}
+	if len(v1) == len(v2) {
+		return 0
+	}
+	return -1
 }

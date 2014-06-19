@@ -225,7 +225,7 @@ func (d *DataTable) Search(data ...interface{}) []map[string]interface{} {
 	var result []map[string]interface{}
 	for ; i < d.RowCount(); i++ {
 		r := d.GetRow(i)
-		if r != nil && reflect.DeepEqual(keyValues, d.getPkValues(d.getSequenceValues(r))[:len(keyValues)]) {
+		if r != nil && cmpValue(keyValues, d.getPkValues(d.getSequenceValues(r))[:len(keyValues)]) == 0 {
 			result = append(result, r)
 		} else {
 			break
@@ -241,7 +241,7 @@ func (d *DataTable) Find(data ...interface{}) int {
 	keyValues := data
 	i := d.search(keyValues...)
 	if i < d.RowCount() &&
-		reflect.DeepEqual(keyValues, d.getPkValues(d.currentRows.GetRow(d.primaryIndexes.trueIndex(i)))) {
+		cmpValue(keyValues, d.getPkValues(d.currentRows.GetRow(d.primaryIndexes.trueIndex(i)))) == 0 {
 		return i
 	} else {
 		return -1
@@ -322,7 +322,7 @@ func (d *DataTable) GetColumnStrings(columnIndex int) []string {
 	}
 }
 func (d *DataTable) GetValue(rowIndex, colIndex int) interface{} {
-	return d.currentRows.Get(d.primaryIndexes.trueIndex(rowIndex), colIndex)
+	return d.currentRows.Get(colIndex, d.primaryIndexes.trueIndex(rowIndex))
 }
 func (d *DataTable) GetRow(rowIndex int) map[string]interface{} {
 	vals := d.GetValues(rowIndex)
@@ -502,9 +502,7 @@ func (d *DataTable) columnIndexByPrimaryKey(cname string) int {
 	return -1
 }
 func (p *pkIndex) Less(i, j int) bool {
-	ss := lessSlices(p.dataTable.KeyValues(i), p.dataTable.KeyValues(j))
-
-	return ss
+	return cmpValue(p.dataTable.KeyValues(i), p.dataTable.KeyValues(j)) < 0
 }
 func (p *pkIndex) Swap(i, j int) {
 	p.index[i], p.index[j] = p.index[j], p.index[i]
@@ -512,8 +510,7 @@ func (p *pkIndex) Swap(i, j int) {
 
 func (p *pkIndex) Search(keys []interface{}) int {
 	return sort.Search(len(p.index), func(i int) bool {
-		ss := !lessSlices(p.dataTable.KeyValues(i), keys)
-		return ss
+		return cmpValue(p.dataTable.KeyValues(i), keys) >= 0
 	})
 }
 
