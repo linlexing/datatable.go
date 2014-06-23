@@ -436,3 +436,28 @@ func TestArrayColumn(t *testing.T) {
 		t.Error("error")
 	}
 }
+func TestMerge(t *testing.T) {
+	table := NewDataTable("table1")
+	table.AddColumn(NewDataColumn("column1", reflect.TypeOf("")))
+	table.AddColumn(NewDataColumn("column2", reflect.TypeOf("")))
+	table.SetPK("column1")
+	table.AddValues("row1", "row1_1")
+	table.AddValues("row2", "row2_1")
+	table.AcceptChange()
+	table.SetValues(0, "row1_1", "test")
+	table1 := NewDataTable("table1")
+	table1.AddColumn(NewDataColumn("column1", reflect.TypeOf("")))
+	table1.AddColumn(NewDataColumn("column2", reflect.TypeOf("")))
+	table1.SetPK("column1")
+	table1.AddValues("row3", "row3_1")
+	table1.AddValues("row4", "row4_1")
+	table1.AcceptChange()
+	table1.DeleteRow(0)
+
+	if err := table.Merge(table1); err != nil {
+		t.Error(err)
+	}
+	if table.RowCount() != 3 || table.GetChange().RowCount != 2 {
+		t.Error("error", table.GetChange().RowCount)
+	}
+}

@@ -341,6 +341,13 @@ func (d *DataTable) GetRow(rowIndex int) map[string]interface{} {
 func (d *DataTable) UpdateRow(rowIndex int, r map[string]interface{}) error {
 	return d.SetValues(rowIndex, d.getSequenceValues(r)...)
 }
+func (d *DataTable) NewRow() map[string]interface{} {
+	result := map[string]interface{}{}
+	for _, col := range d.columns {
+		result[col.Name] = col.ZeroValue()
+	}
+	return result
+}
 func (d *DataTable) getChangeInsert() []*ChangeRow {
 	result := []*ChangeRow{}
 	for i, status := range d.rowStatus {
@@ -538,4 +545,25 @@ func (d *DataTable) SetPK(names ...string) {
 }
 func (d *DataTable) HasChange() bool {
 	return d.changed
+}
+func (d *DataTable) Merge(srcTable *DataTable) error {
+	if d.ColumnCount() != srcTable.ColumnCount() {
+		return fmt.Errorf("the src table columncount:%d not is %d", srcTable.ColumnCount(), d.ColumnCount())
+	}
+	for i, col := range d.Columns() {
+		if !reflect.DeepEqual(srcTable.Columns()[i].DataType, col.DataType) {
+			return fmt.Errorf("the column:%s data type %s not equal %s", col.Name, col.DataType.String(), srcTable.Columns()[i].DataType)
+		}
+	}
+	pks := make([]int, len(srcTable.primaryIndexes.index))
+	copy(pks, srcTable.primaryIndexes.index)
+	for i, _ := range pks {
+		pks[i] += d.RowCount()
+	}
+	d.primaryIndexes.index = append(d.primaryIndexes.index, pks...)
+	d.currentRows.Merge(srcTable.currentRows)
+	d.deleteRows.Merge(srcTable.deleteRows)
+	d.rowStatus = append(d.rowStatus, srcTable.rowStatus...)
+	d.originData = append(d.originData, srcTable.originData...)
+	return nil
 }

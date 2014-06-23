@@ -8,6 +8,11 @@ type dataRows struct {
 	data []interface{}
 }
 
+func (r *dataRows) Merge(src *dataRows) {
+	for i, _ := range r.data {
+		r.data[i] = reflect.AppendSlice(reflect.ValueOf(r.data[i]), reflect.ValueOf(src.data[i])).Interface()
+	}
+}
 func (r *dataRows) Remove(rowIndex int) {
 	for i, _ := range r.data {
 		lastIdx := reflect.ValueOf(r.data[i]).Len() - 1
