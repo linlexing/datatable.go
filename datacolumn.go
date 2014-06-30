@@ -12,7 +12,7 @@ var DataTypeError = errors.New("datatype error")
 type DataColumn struct {
 	index    int
 	Name     string
-	DataType reflect.Type
+	DataType reflect.Type `json:"-"`
 }
 
 func (d *DataColumn) Index() int {

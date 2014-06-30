@@ -31,7 +31,7 @@ func TestDataTable_ColumnIndex(t *testing.T) {
 	if c.index != 0 {
 		t.Error("error")
 	}
-	if v := table.Columns()[0]; v == nil {
+	if v := table.Columns[0]; v == nil {
 		t.Error("null")
 	}
 	c = table.AddColumn(NewInt64Column("column2"))
@@ -249,7 +249,7 @@ func Benchmark_SetPKValues(b *testing.B) {
 		if r == nil {
 			fmt.Print("error", ",ri:", rowindex)
 		}
-		r[table.Columns()[0].Name] = fmt.Sprint(rand.Int63n(1000000))
+		r[table.Columns[0].Name] = fmt.Sprint(rand.Int63n(1000000))
 		if err := table.UpdateRow(i, r); err != nil && err != KeyValueExists {
 			b.Error(err)
 		}
@@ -459,5 +459,23 @@ func TestMerge(t *testing.T) {
 	}
 	if table.RowCount() != 3 || table.GetChange().RowCount != 2 {
 		t.Error("error", table.GetChange().RowCount)
+	}
+}
+
+func TestClear(t *testing.T) {
+	table := NewDataTable("table1")
+	table.AddColumn(NewDataColumn("column1", reflect.TypeOf("")))
+	table.AddColumn(NewDataColumn("column2", reflect.TypeOf("")))
+	table.SetPK("column1")
+	table.AddValues("row1", "row1_1")
+	table.AddValues("row2", "row2_1")
+	table.Clear()
+	if table.RowCount() != 0 {
+		t.Error("error")
+	}
+	table.AddValues("row3", "row3_1")
+	table.AddValues("row4", "row4_1")
+	if table.RowCount() != 2 {
+		t.Error("error")
 	}
 }
