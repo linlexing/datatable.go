@@ -57,7 +57,7 @@ type DataTable struct {
 	PKConstraintName string
 	changed          bool
 	Columns          []*DataColumn
-	primaryKeys      []*DataColumn
+	PrimaryKeys      []*DataColumn
 	currentRows      *dataRows
 	primaryIndexes   pkIndex
 	rowStatus        []byte
@@ -104,25 +104,23 @@ func (d *DataTable) Clone() *DataTable {
 		result.AddColumn(&nc)
 	}
 	pks := []string{}
-	for _, c := range d.PrimaryKeys() {
+	for _, c := range d.PrimaryKeys {
 
 		pks = append(pks, c.Name)
 	}
 	result.SetPK(pks...)
 	return result
 }
-func (d *DataTable) PrimaryKeys() []*DataColumn {
-	return d.primaryKeys
-}
+
 func (d *DataTable) GetPK() []string {
 	r := []string{}
-	for _, v := range d.primaryKeys {
+	for _, v := range d.PrimaryKeys {
 		r = append(r, v.Name)
 	}
 	return r
 }
 func (d *DataTable) HasPrimaryKey() bool {
-	return len(d.primaryKeys) > 0
+	return len(d.PrimaryKeys) > 0
 }
 func (d *DataTable) ColumnNames() []string {
 	r := []string{}
@@ -133,11 +131,11 @@ func (d *DataTable) ColumnNames() []string {
 }
 
 func (d *DataTable) KeyValues(rowIndex int) []interface{} {
-	if len(d.PrimaryKeys()) == 0 {
+	if len(d.PrimaryKeys) == 0 {
 		return nil
 	}
 	var result []interface{}
-	for _, c := range d.primaryKeys {
+	for _, c := range d.PrimaryKeys {
 		result = append(result, reflect.ValueOf(d.currentRows.data[c.index]).Index(d.primaryIndexes.trueIndex(rowIndex)).Interface())
 	}
 	return result
@@ -173,7 +171,7 @@ func (d *DataTable) getSequenceValues(r map[string]interface{}) []interface{} {
 }
 func (d *DataTable) getPkValues(values []interface{}) []interface{} {
 	var result []interface{}
-	for _, c := range d.primaryKeys {
+	for _, c := range d.PrimaryKeys {
 		result = append(result, values[c.index])
 	}
 	return result
@@ -200,7 +198,7 @@ func (d *DataTable) SetValues(rowIndex int, values ...interface{}) (err error) {
 	if !reflect.DeepEqual(oldPkValue, newPkValue) {
 		pkChanged = true
 		newKeyIndex = d.primaryIndexes.Search(newPkValue)
-		if len(d.primaryKeys) > 0 && newKeyIndex < d.primaryIndexes.Len() &&
+		if len(d.PrimaryKeys) > 0 && newKeyIndex < d.primaryIndexes.Len() &&
 			reflect.DeepEqual(newPkValue, d.KeyValues(newKeyIndex)) {
 			return KeyValueExists
 		}
@@ -238,7 +236,7 @@ func (d *DataTable) Search(data ...interface{}) []map[string]interface{} {
 	return result
 }
 func (d *DataTable) Find(data ...interface{}) int {
-	if len(d.PrimaryKeys()) == 0 {
+	if len(d.PrimaryKeys) == 0 {
 		return -1
 	}
 	//keyValues := convertToNullableSlices(data)
@@ -424,7 +422,7 @@ func (d *DataTable) AddValues(vs ...interface{}) (err error) {
 	data := vs
 	keyvalues := d.getPkValues(data)
 	newKeyIndex := d.primaryIndexes.Search(keyvalues)
-	if len(d.primaryKeys) > 0 && newKeyIndex < d.primaryIndexes.Len() &&
+	if len(d.PrimaryKeys) > 0 && newKeyIndex < d.primaryIndexes.Len() &&
 		reflect.DeepEqual(d.KeyValues(newKeyIndex), keyvalues) {
 		return KeyValueExists
 	}
@@ -473,7 +471,7 @@ func (p *pkIndex) appendIndex(newIndex, newTrueIndex int) {
 	p.index = append(p.index[:newIndex], append([]int{newTrueIndex}, p.index[newIndex:]...)...)
 }
 func (p *pkIndex) rebuildPKIndex() {
-	if len(p.dataTable.PrimaryKeys()) == 0 {
+	if len(p.dataTable.PrimaryKeys) == 0 {
 		return
 	}
 	p.index = make([]int, p.dataTable.currentRows.Count())
@@ -486,7 +484,7 @@ func (p *pkIndex) Len() int {
 	return len(p.index)
 }
 func (p *pkIndex) trueIndex(i int) int {
-	if len(p.dataTable.PrimaryKeys()) == 0 {
+	if len(p.dataTable.PrimaryKeys) == 0 {
 		return i
 	}
 
@@ -505,7 +503,7 @@ func (d *DataTable) IsPrimaryKey(cname string) bool {
 }
 
 func (d *DataTable) columnIndexByPrimaryKey(cname string) int {
-	for i, p := range d.primaryKeys {
+	for i, p := range d.PrimaryKeys {
 		if cname == p.Name {
 			return i
 		}
@@ -550,7 +548,7 @@ func (d *DataTable) SetPK(names ...string) {
 			pks = append(pks, d.Columns[i])
 		}
 	}
-	d.primaryKeys = pks
+	d.PrimaryKeys = pks
 	d.primaryIndexes.rebuildPKIndex()
 }
 func (d *DataTable) HasChange() bool {
