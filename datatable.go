@@ -214,7 +214,7 @@ func (d *DataTable) Search(data ...interface{}) []map[string]interface{} {
 	i := startIndex
 	var result []map[string]interface{}
 	for ; i < d.RowCount(); i++ {
-		r := d.GetRow(i)
+		r := d.Row(i)
 		if r != nil && cmpValue(keyValues, d.getPkValues(d.getSequenceValues(r))[:len(keyValues)]) == 0 {
 			result = append(result, r)
 		} else {
@@ -244,7 +244,7 @@ func (d *DataTable) GetOriginRow(rowIndex int) map[string]interface{} {
 	trueIndex := d.primaryIndexes.trueIndex(rowIndex)
 	switch d.rowStatus[trueIndex] {
 	case UNCHANGE:
-		return d.GetRow(rowIndex)
+		return d.Row(rowIndex)
 	case UPDATE:
 		vals := d.originData[trueIndex]
 		result := map[string]interface{}{}
@@ -272,7 +272,7 @@ func (d *DataTable) AsTabText(columns ...string) string {
 		result = append(result, strings.Join(d.ColumnNames(), "\t"))
 	}
 	for i := 0; i < d.RowCount(); i++ {
-		r := d.GetRow(i)
+		r := d.Row(i)
 		line := []string{}
 		for j := 0; j < d.ColumnCount(); j++ {
 			c := d.Columns[j]
@@ -314,7 +314,7 @@ func (d *DataTable) GetColumnStrings(columnIndex int) []string {
 func (d *DataTable) GetValue(rowIndex, colIndex int) interface{} {
 	return d.currentRows.Get(colIndex, d.primaryIndexes.trueIndex(rowIndex))
 }
-func (d *DataTable) GetRow(rowIndex int) map[string]interface{} {
+func (d *DataTable) Row(rowIndex int) map[string]interface{} {
 	vals := d.GetValues(rowIndex)
 	result := map[string]interface{}{}
 	for i, col := range d.Columns {
