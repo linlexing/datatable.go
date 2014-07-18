@@ -481,19 +481,19 @@ func TestClear(t *testing.T) {
 }
 func TestInterfaceColumn(t *testing.T) {
 	table := NewDataTable("table1")
-	table.AddColumn(NewDataColumn("column1", reflect.TypeOf("")))
+	table.AddColumn(NewDataColumn("column1", reflect.TypeOf(""))).MaxSize = 2
 	table.AddColumn(NewDataColumnN("column2", reflect.TypeOf("")))
 	table.SetPK("column1")
-	if err := table.AddValues("row1", "row1_1"); err != nil {
+	if err := table.AddValues("1", "row1_1"); err != nil {
 		t.Error(err)
 	}
-	if err := table.AddValues("row2", nil); err != nil {
+	if err := table.AddValues("2", nil); err != nil {
 		t.Error(err)
 	}
 	if table.Row(1)["column2"] != nil {
 		t.Error("error")
 	}
-	if err := table.AddValues("row3", 1); err != nil {
+	if err := table.AddValues("3", "1"); err != nil {
 		t.Error(err)
 	}
 }

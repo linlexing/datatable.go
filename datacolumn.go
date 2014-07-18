@@ -14,6 +14,7 @@ type DataColumn struct {
 	dataType reflect.Type `json:"-"`
 	Name     string
 	NotNull  bool
+	MaxSize  int
 }
 
 func (d *DataColumn) Index() int {
@@ -34,11 +35,16 @@ func (d *DataColumn) PtrZeroValue() interface{} {
 	}
 
 }
-func (d *DataColumn) Valid(value interface{}) bool {
+func (d *DataColumn) Valid(value interface{}) error {
 	if d.NotNull || value != nil {
-		return reflect.DeepEqual(reflect.TypeOf(value), d.dataType)
+		if !reflect.DeepEqual(reflect.TypeOf(value), d.dataType) {
+			return fmt.Errorf("the value %v(%T) not is type %s", value, value, d.dataType.String())
+		}
 	}
-	return true
+	if value != nil && d.MaxSize > 0 && d.dataType.Kind() == reflect.String && len(value.(string)) > d.MaxSize {
+		return fmt.Errorf("the value %q(%T) length %d > maxsize(%d)", value, value, len(value.(string)), d.MaxSize)
+	}
+	return nil
 }
 func (d *DataColumn) ZeroValue() interface{} {
 	defer func() {

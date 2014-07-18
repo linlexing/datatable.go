@@ -400,8 +400,8 @@ func (d *DataTable) DeleteRow(rowIndex int) error {
 }
 func (d *DataTable) validValues(vs []interface{}) error {
 	for i, v := range vs {
-		if !d.Columns[i].Valid(v) {
-			return fmt.Errorf("the value %v(%T) not is type %s", v, v, d.Columns[i].dataType.String())
+		if err := d.Columns[i].Valid(v); err != nil {
+			return err
 		}
 	}
 	return nil
