@@ -92,14 +92,14 @@ func TestDataTable_AlterColumn(t *testing.T) {
 func CreateTestData() *DataTable {
 	table := NewDataTable("Table1")
 	table.AddColumn(NewStringColumn("column1"))
-	table.AddColumn(NewIntColumn("column2"))
+	table.AddColumn(NewInt64Column("column2"))
 	table.AddColumn(NewStringColumn("column3"))
 	table.SetPK("column1", "column2")
-	table.AddValues("first", 10, "test1")
-	table.AddValues("second", 1, "test")
-	table.AddValues("aaa", 10, "test1")
-	table.AddValues("bbb", 10, "test1")
-	table.AddValues("first", 11, "test1")
+	table.AddValues("first", int64(10), "test1")
+	table.AddValues("second", int64(1), "test")
+	table.AddValues("aaa", int64(10), "test1")
+	table.AddValues("bbb", int64(10), "test1")
+	table.AddValues("first", int64(11), "test1")
 	return table
 }
 func TestDataTable_Data(t *testing.T) {
@@ -170,7 +170,7 @@ func TestDataTable_Data(t *testing.T) {
 }
 func TestDataTable_Search(t *testing.T) {
 	table := CreateTestData()
-	if table.Find("first", 10) == -1 {
+	if table.Find("first", int64(10)) == -1 {
 		t.Error("error")
 	}
 	rows := table.Search("first")
@@ -194,7 +194,7 @@ func TestDataTable_GetChange(t *testing.T) {
 	r := table.Row(0)
 	r["column1"] = "first1"
 	table.UpdateRow(0, r)
-	table.AddValues("zzzdfdfdf", 2323, "dfadfa")
+	table.AddValues("zzzdfdfdf", int64(2323), "dfadfa")
 	err := table.DeleteRow(1)
 	if err != nil {
 		t.Error(err)
@@ -259,13 +259,13 @@ func Benchmark_SetPKValues(b *testing.B) {
 func CreateBenchmarkData(row, column int) *DataTable {
 	table := NewDataTable("Table1")
 	table.AddColumn(NewStringColumn("column1"))
-	table.AddColumn(NewIntColumn("column2"))
+	table.AddColumn(NewInt64Column("column2"))
 	for i := 2; i < column; i++ {
 		table.AddColumn(NewStringColumn(fmt.Sprintf("column%v", i+1)))
 	}
 	for i := 0; i < row; i++ {
 
-		one := []interface{}{fmt.Sprintf("rows%v", i), i}
+		one := []interface{}{fmt.Sprintf("rows%v", i), int64(i)}
 		for i := 2; i < column; i++ {
 			one = append(one, fmt.Sprintf("column%v", i+1))
 		}
@@ -326,7 +326,7 @@ func BenchmarkRow(b *testing.B) {
 func ExampleDataTable_AddValues() {
 	table := NewDataTable("table1")
 	table.AddColumn(NewStringColumn("column1"))
-	table.AddColumn(NewIntColumn("column2"))
+	table.AddColumn(NewInt64Column("column2"))
 	table.AddColumn(NewStringColumn("column3"))
 	table.AddColumn(NewStringColumn("column4"))
 	table.AddColumn(NewStringColumn("column5"))
@@ -335,16 +335,16 @@ func ExampleDataTable_AddValues() {
 	table.AddColumn(NewStringColumn("column8"))
 	table.SetPK("column2", "column1")
 	for i := 10; i >= 1; i-- {
-		table.AddValues(fmt.Sprint("row", i), i, "field3", "field4", "field5", "field6", "field7", "field8")
+		table.AddValues(fmt.Sprint("row", i), int64(i), "field3", "field4", "field5", "field6", "field7", "field8")
 	}
-	table.AddValues(fmt.Sprint("row", 200), 2, "field3", "field4", "field5", "field6", "field7", "field8")
-	err := table.SetValues(0, fmt.Sprint("row", 201), 6, "field3", "field4", "field5", "field6", "field7", "field8")
+	table.AddValues(fmt.Sprint("row", 200), int64(2), "field3", "field4", "field5", "field6", "field7", "field8")
+	err := table.SetValues(0, fmt.Sprint("row", 201), int64(6), "field3", "field4", "field5", "field6", "field7", "field8")
 	if err != nil {
 		fmt.Print(err)
 	}
 	r := table.Row(3)
 	r["column1"] = "row101"
-	r["column2"] = 2
+	r["column2"] = int64(2)
 	if err := table.UpdateRow(3, r); err != nil {
 		fmt.Print(err)
 	}
@@ -416,38 +416,39 @@ func TestByteaColumn(t *testing.T) {
 	}
 
 }
-func TestArrayColumn(t *testing.T) {
-	table := NewDataTable("table1")
-	if table.AddColumn(NewDataColumn("column1", reflect.TypeOf([][]byte{}))) == nil {
-		t.Error("is nil")
-	}
-	if table.AddColumn(NewDataColumn("column2", reflect.TypeOf([]string{}))) == nil {
-		t.Error("is nil")
-	}
-	row := []interface{}{[][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, []string{"22", "33"}}
-	if err := table.AddValues(row...); err != nil {
-		t.Error(err, ",lenght:", len(row), ",columnLen:", table.ColumnCount())
-	}
-	if !reflect.DeepEqual([][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, table.GetValue(0, 0)) {
-		t.Error("error")
-	}
-	table.SetPK("column1", "column2")
-	if table.Find([][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, []string{"22", "33"}) < 0 {
-		t.Error("error")
-	}
-}
+
+//func TestArrayColumn(t *testing.T) {
+//	table := NewDataTable("table1")
+//	if table.AddColumn(NewDataColumn("column1", reflect.TypeOf([][]byte{}))) == nil {
+//		t.Error("is nil")
+//	}
+//	if table.AddColumn(NewDataColumn("column2", reflect.TypeOf([]string{}))) == nil {
+//		t.Error("is nil")
+//	}
+//	row := []interface{}{[][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, []string{"22", "33"}}
+//	if err := table.AddValues(row...); err != nil {
+//		t.Error(err, ",lenght:", len(row), ",columnLen:", table.ColumnCount())
+//	}
+//	if !reflect.DeepEqual([][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, table.GetValue(0, 0)) {
+//		t.Error("error")
+//	}
+//	table.SetPK("column1", "column2")
+//	if table.Find([][]byte{[]byte{1, 2, 3}, []byte{2, 2, 3}}, []string{"22", "33"}) < 0 {
+//		t.Error("error")
+//	}
+//}
 func TestMerge(t *testing.T) {
 	table := NewDataTable("table1")
-	table.AddColumn(NewDataColumn("column1", reflect.TypeOf("")))
-	table.AddColumn(NewDataColumn("column2", reflect.TypeOf("")))
+	table.AddColumn(NewStringColumn("column1"))
+	table.AddColumn(NewStringColumn("column2"))
 	table.SetPK("column1")
 	table.AddValues("row1", "row1_1")
 	table.AddValues("row2", "row2_1")
 	table.AcceptChange()
 	table.SetValues(0, "row1_1", "test")
 	table1 := NewDataTable("table1")
-	table1.AddColumn(NewDataColumn("column1", reflect.TypeOf("")))
-	table1.AddColumn(NewDataColumn("column2", reflect.TypeOf("")))
+	table1.AddColumn(NewStringColumn("column1"))
+	table1.AddColumn(NewStringColumn("column2"))
 	table1.SetPK("column1")
 	table1.AddValues("row3", "row3_1")
 	table1.AddValues("row4", "row4_1")
@@ -464,8 +465,8 @@ func TestMerge(t *testing.T) {
 
 func TestClear(t *testing.T) {
 	table := NewDataTable("table1")
-	table.AddColumn(NewDataColumn("column1", reflect.TypeOf("")))
-	table.AddColumn(NewDataColumn("column2", reflect.TypeOf("")))
+	table.AddColumn(NewStringColumn("column1"))
+	table.AddColumn(NewStringColumn("column2"))
 	table.SetPK("column1")
 	table.AddValues("row1", "row1_1")
 	table.AddValues("row2", "row2_1")
@@ -481,8 +482,8 @@ func TestClear(t *testing.T) {
 }
 func TestInterfaceColumn(t *testing.T) {
 	table := NewDataTable("table1")
-	table.AddColumn(NewDataColumn("column1", reflect.TypeOf(""))).MaxSize = 2
-	table.AddColumn(NewDataColumnN("column2", reflect.TypeOf("")))
+	table.AddColumn(StringColumn("column1", 2, true))
+	table.AddColumn(StringColumn("column2", 0, false))
 	table.SetPK("column1")
 	if err := table.AddValues("1", "row1_1"); err != nil {
 		t.Error(err)

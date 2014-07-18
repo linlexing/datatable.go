@@ -1,9 +1,12 @@
 package datatable
 
 import (
+	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -13,8 +16,8 @@ type DataColumn struct {
 	index    int
 	dataType reflect.Type `json:"-"`
 	Name     string
-	NotNull  bool
 	MaxSize  int
+	NotNull  bool
 }
 
 func (d *DataColumn) Index() int {
@@ -70,31 +73,111 @@ func (d *DataColumn) DataType() reflect.Type {
 		return InterfaceType
 	}
 }
+func (d *DataColumn) EncodeString(value interface{}) string {
+	switch tv := value.(type) {
+	case nil:
+		return ""
+	case string:
+		return tv
+	case []byte:
+		if len(tv) == 0 {
+			return ""
+		}
+		return fmt.Sprintf("\\x%x", tv)
+	case int64:
+		return fmt.Sprint(tv)
+	case float64:
+		return fmt.Sprintf("%.17f", tv)
+	case time.Time:
+		return tv.Format(time.RFC3339Nano)
+	case bool:
+		if tv {
+			return "t"
+		} else {
+			return "f"
+		}
+	default:
+		panic(fmt.Errorf("can't convert %v(%T) to string", tv, tv))
+	}
+}
+func decodeHex(value string) ([]byte, error) {
+	if len(value) >= 2 && bytes.Equal([]byte(value)[:2], []byte("\\x")) {
+		// bytea_output = hex
+		s := []byte(value)[2:] // trim off leading "\\x"
+		rev := make([]byte, hex.DecodedLen(len(s)))
+		_, result_err := hex.Decode(rev, s)
+		if result_err == nil {
+			return rev, nil
+		} else {
+			return nil, result_err
+		}
+	} else {
+		return nil, fmt.Errorf("%s is invalid hex string", value)
+	}
+}
+func (d *DataColumn) DecodeString(value string) (interface{}, error) {
+	if value == "" {
+		if d.NotNull {
+			return nil, fmt.Errorf("the column %q can't nullable,the empty string invalid", d.Name)
+		}
+		return nil, nil
+	}
+	switch tv := d.ZeroValue().(type) {
+	case string:
+		return value, nil
+	case []byte:
+		return decodeHex(value)
+	case int64:
+		return strconv.ParseInt(string(value), 10, 64)
+	case float64:
+		return strconv.ParseFloat(value, 64)
+	case time.Time:
+		return time.Parse(time.RFC3339Nano, value)
+	case bool:
+		return strconv.ParseBool(value)
+	default:
+		return nil, fmt.Errorf("can't convert %q to type %T", value, tv)
+	}
+}
 
-func NewDataColumn(name string, dataType reflect.Type) *DataColumn {
-	return &DataColumn{Name: name, dataType: dataType, NotNull: true}
+func newDataColumn(name string, dataType reflect.Type, maxsize int, notnull bool) *DataColumn {
+	return &DataColumn{Name: name, dataType: dataType, NotNull: notnull, MaxSize: maxsize}
 }
-func NewDataColumnN(name string, dataType reflect.Type) *DataColumn {
-	return &DataColumn{Name: name, dataType: dataType, NotNull: false}
+
+func StringColumn(name string, maxsize int, notnull bool) *DataColumn {
+	return newDataColumn(name, reflect.TypeOf(string("")), maxsize, notnull)
 }
+func Float64Column(name string, notnull bool) *DataColumn {
+	return newDataColumn(name, reflect.TypeOf(float64(0)), 0, notnull)
+}
+func Int64Column(name string, notnull bool) *DataColumn {
+	return newDataColumn(name, reflect.TypeOf(int64(0)), 0, notnull)
+}
+func BoolColumn(name string, notnull bool) *DataColumn {
+	return newDataColumn(name, reflect.TypeOf(true), 0, notnull)
+}
+func ByteaColumn(name string, notnull bool) *DataColumn {
+	return newDataColumn(name, reflect.TypeOf([]byte{}), 0, notnull)
+}
+func TimeColumn(name string, notnull bool) *DataColumn {
+	return newDataColumn(name, reflect.TypeOf(time.Now()), 0, notnull)
+}
+
 func NewStringColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(string("")))
+	return newDataColumn(name, reflect.TypeOf(string("")), 0, true)
 }
 func NewFloat64Column(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(float64(0)))
+	return newDataColumn(name, reflect.TypeOf(float64(0)), 0, true)
 }
 func NewInt64Column(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(int64(0)))
-}
-func NewIntColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(int(0)))
+	return newDataColumn(name, reflect.TypeOf(int64(0)), 0, true)
 }
 func NewBoolColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(true))
+	return newDataColumn(name, reflect.TypeOf(true), 0, true)
 }
 func NewByteaColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf([]byte{}))
+	return newDataColumn(name, reflect.TypeOf([]byte{}), 0, true)
 }
 func NewTimeColumn(name string) *DataColumn {
-	return NewDataColumn(name, reflect.TypeOf(time.Now()))
+	return newDataColumn(name, reflect.TypeOf(time.Now()), 0, true)
 }
