@@ -34,9 +34,15 @@ func (r *dataRows) AddColumn(t reflect.Type) {
 	r.data = append(r.data, reflect.MakeSlice(reflect.SliceOf(t), r.Count(), r.Count()).Interface())
 	return
 }
+func ValueOf(v interface{}) reflect.Value {
+	if v == nil {
+		return NilValue
+	}
+	return reflect.ValueOf(v)
+}
 func (r *dataRows) AddRow(values []interface{}) {
 	for i, _ := range r.data {
-		r.data[i] = reflect.Append(reflect.ValueOf(r.data[i]), reflect.ValueOf(values[i])).Interface()
+		r.data[i] = reflect.Append(reflect.ValueOf(r.data[i]), ValueOf(values[i])).Interface()
 	}
 	return
 }
@@ -48,7 +54,7 @@ func (r *dataRows) GetRow(row int) []interface{} {
 	return result
 }
 func (r *dataRows) Set(col, row int, value interface{}) {
-	reflect.ValueOf(r.data[col]).Index(row).Set(reflect.ValueOf(value))
+	reflect.ValueOf(r.data[col]).Index(row).Set(ValueOf(value))
 }
 func (r *dataRows) SetRow(row int, values []interface{}) {
 	for i, _ := range r.data {

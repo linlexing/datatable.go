@@ -115,7 +115,7 @@ func TestDataTable_Data(t *testing.T) {
 	if table.RowCount() != 1 {
 		t.Error("error")
 	}
-	r := table.GetRow(0)
+	r := table.Row(0)
 	if r == nil {
 		t.Error("error")
 	}
@@ -130,7 +130,7 @@ func TestDataTable_Data(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	r = table.GetRow(0)
+	r = table.Row(0)
 	if r["column2"] != int64(12) {
 		t.Error("error")
 	}
@@ -152,7 +152,7 @@ func TestDataTable_Data(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	r = table.GetRow(0)
+	r = table.Row(0)
 	if r == nil {
 		t.Error("error")
 	}
@@ -191,7 +191,7 @@ func TestDataTable_Delete(t *testing.T) {
 func TestDataTable_GetChange(t *testing.T) {
 	table := CreateTestData()
 	table.AcceptChange()
-	r := table.GetRow(0)
+	r := table.Row(0)
 	r["column1"] = "first1"
 	table.UpdateRow(0, r)
 	table.AddValues("zzzdfdfdf", 2323, "dfadfa")
@@ -210,7 +210,7 @@ func TestDataTable_GetChange(t *testing.T) {
 func TestDataTable_GetOriginRow(t *testing.T) {
 	table := CreateTestData()
 	table.AcceptChange()
-	r := table.GetRow(0)
+	r := table.Row(0)
 	r["column3"] = "afdafad"
 	table.UpdateRow(0, r)
 	r1 := table.GetOriginRow(0)
@@ -245,7 +245,7 @@ func Benchmark_SetPKValues(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rowindex := rand.Intn(10000)
-		r := table.GetRow(rowindex)
+		r := table.Row(rowindex)
 		if r == nil {
 			fmt.Print("error", ",ri:", rowindex)
 		}
@@ -314,12 +314,12 @@ func Benchmark_Find(b *testing.B) {
 	}
 	b.SetBytes(140)
 }
-func Benchmark_GetRow(b *testing.B) {
+func BenchmarkRow(b *testing.B) {
 	table := CreateBenchmarkData(100, 10)
 	table.SetPK("column1", "column2")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		table.GetRow(rand.Intn(100))
+		table.Row(rand.Intn(100))
 	}
 	b.SetBytes(140)
 }
@@ -342,7 +342,7 @@ func ExampleDataTable_AddValues() {
 	if err != nil {
 		fmt.Print(err)
 	}
-	r := table.GetRow(3)
+	r := table.Row(3)
 	r["column1"] = "row101"
 	r["column2"] = 2
 	if err := table.UpdateRow(3, r); err != nil {
@@ -476,6 +476,21 @@ func TestClear(t *testing.T) {
 	table.AddValues("row3", "row3_1")
 	table.AddValues("row4", "row4_1")
 	if table.RowCount() != 2 {
+		t.Error("error")
+	}
+}
+func TestInterfaceColumn(t *testing.T) {
+	table := NewDataTable("table1")
+	table.AddColumn(NewDataColumn("column1", reflect.TypeOf("")))
+	table.AddColumn(NewDataColumnV("column2"))
+	table.SetPK("column1")
+	if err := table.AddValues("row1", "row1_1"); err != nil {
+		t.Error(err)
+	}
+	if err := table.AddValues("row2", nil); err != nil {
+		t.Error(err)
+	}
+	if table.Row(1)["column2"] != nil {
 		t.Error("error")
 	}
 }

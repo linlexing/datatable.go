@@ -20,6 +20,7 @@ var (
 	ColumnExistsError = errors.New("the column exists")
 	RowNotFoundError  = errors.New("the row not found")
 	KeyValueExists    = errors.New("the key value aleary exists")
+	NilValue          = reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem())
 	//NotThisTableRow     = errors.New("the row not is this table's row")
 
 )
@@ -124,7 +125,7 @@ func (d *DataTable) KeyValues(rowIndex int) []interface{} {
 	}
 	var result []interface{}
 	for _, c := range d.PK {
-		result = append(result, reflect.ValueOf(d.currentRows.data[d.ColumnIndex(c)]).Index(d.primaryIndexes.trueIndex(rowIndex)).Interface())
+		result = append(result, d.currentRows.Get(d.ColumnIndex(c), d.primaryIndexes.trueIndex(rowIndex)))
 	}
 	return result
 }

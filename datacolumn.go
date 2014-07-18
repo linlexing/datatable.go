@@ -45,6 +45,9 @@ func (d *DataColumn) Clone() *DataColumn {
 func NewDataColumn(name string, dataType reflect.Type) *DataColumn {
 	return &DataColumn{Name: name, DataType: dataType}
 }
+func NewDataColumnV(name string) *DataColumn {
+	return &DataColumn{Name: name, DataType: reflect.TypeOf((*interface{})(nil)).Elem()}
+}
 func NewStringColumn(name string) *DataColumn {
 	return NewDataColumn(name, reflect.TypeOf(string("")))
 }
