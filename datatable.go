@@ -81,8 +81,8 @@ func NewDataTable(name string) *DataTable {
 func (d *DataTable) AddColumn(c *DataColumn) *DataColumn {
 
 	if i := d.ColumnIndex(c.Name); i == -1 {
-		d.currentRows.AddColumn(c.DataType())
-		d.deleteRows.AddColumn(c.DataType())
+		d.currentRows.AddColumn(c.StoreType())
+		d.deleteRows.AddColumn(c.StoreType())
 		for i := 0; i < len(d.originData); i++ {
 			d.originData[i] = append(d.originData[i], c.ZeroValue()) //use nil ,maybe error
 		}
@@ -137,7 +137,7 @@ func (d *DataTable) AcceptChange() {
 	d.originData = make([][]interface{}, d.currentRows.Count())
 	d.deleteRows = &dataRows{}
 	for _, c := range d.Columns {
-		d.deleteRows.AddColumn(c.DataType())
+		d.deleteRows.AddColumn(c.StoreType())
 	}
 	d.changed = false
 }
@@ -511,8 +511,8 @@ func (d *DataTable) Clear() {
 	d.rowStatus = nil
 	d.originData = nil
 	for _, c := range d.Columns {
-		d.currentRows.AddColumn(c.DataType())
-		d.deleteRows.AddColumn(c.DataType())
+		d.currentRows.AddColumn(c.StoreType())
+		d.deleteRows.AddColumn(c.StoreType())
 	}
 	d.changed = false
 }
@@ -550,8 +550,8 @@ func (d *DataTable) Merge(srcTable *DataTable) error {
 		return fmt.Errorf("the src table columncount:%d not is %d", srcTable.ColumnCount(), d.ColumnCount())
 	}
 	for i, col := range d.Columns {
-		if !reflect.DeepEqual(srcTable.Columns[i].DataType(), col.DataType()) {
-			return fmt.Errorf("the column:%s data type %s not equal %s", col.Name, col.DataType().String(), srcTable.Columns[i].DataType().String())
+		if srcTable.Columns[i].dataType != col.dataType {
+			return fmt.Errorf("the column:%s data type %s not equal %s", col.Name, col.dataType, srcTable.Columns[i].dataType)
 		}
 	}
 	pks := make([]int, len(srcTable.primaryIndexes.index))

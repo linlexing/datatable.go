@@ -3,22 +3,57 @@ package datatable
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"time"
 )
 
-var DataTypeError = errors.New("datatype error")
+const (
+	String ColumnType = iota
+	Int64
+	Float64
+	Bool
+	Time
+	Bytea
+)
+
+type ColumnType int
+
+func (c ColumnType) String() string {
+	switch c {
+	case String:
+		return "string"
+	case Int64:
+		return "int64"
+	case Float64:
+		return "float64"
+	case Bool:
+		return "bool"
+	case Time:
+		return "time"
+	case Bytea:
+		return "bytea"
+	default:
+		return "error"
+	}
+}
 
 type DataColumn struct {
 	index    int
-	dataType reflect.Type `json:"-"`
+	dataType ColumnType
 	Name     string
 	MaxSize  int
 	NotNull  bool
 }
+
+var reflectType []reflect.Type = []reflect.Type{
+	reflect.TypeOf(""),
+	reflect.TypeOf(int64(0)),
+	reflect.TypeOf(float64(0)),
+	reflect.TypeOf(true),
+	reflect.TypeOf(time.Time{}),
+	reflect.TypeOf([]byte{})}
 
 func (d *DataColumn) Index() int {
 	return d.index
@@ -28,11 +63,11 @@ func (d *DataColumn) Index() int {
 func (d *DataColumn) PtrZeroValue() interface{} {
 	defer func() {
 		if f := recover(); f != nil {
-			panic(fmt.Sprintf("%s,type:%s", f, d.DataType()))
+			panic(fmt.Sprintf("%s,type:%s", f, d.StoreType()))
 		}
 	}()
 	if d.NotNull {
-		return reflect.New(d.DataType()).Interface()
+		return reflect.New(d.StoreType()).Interface()
 	} else {
 		return PtrNilValue
 	}
@@ -40,11 +75,11 @@ func (d *DataColumn) PtrZeroValue() interface{} {
 }
 func (d *DataColumn) Valid(value interface{}) error {
 	if d.NotNull || value != nil {
-		if !reflect.DeepEqual(reflect.TypeOf(value), d.dataType) {
-			return fmt.Errorf("the value %v(%T) not is type %s", value, value, d.dataType.String())
+		if !reflect.DeepEqual(reflect.TypeOf(value), d.ReflectType()) {
+			return fmt.Errorf("the value %v(%T) not is type %s", value, value, d.ReflectType().String())
 		}
 	}
-	if value != nil && d.MaxSize > 0 && d.dataType.Kind() == reflect.String && len(value.(string)) > d.MaxSize {
+	if value != nil && d.MaxSize > 0 && d.dataType == String && len(value.(string)) > d.MaxSize {
 		return fmt.Errorf("the value %q(%T) length %d > maxsize(%d)", value, value, len(value.(string)), d.MaxSize)
 	}
 	return nil
@@ -52,11 +87,11 @@ func (d *DataColumn) Valid(value interface{}) error {
 func (d *DataColumn) ZeroValue() interface{} {
 	defer func() {
 		if f := recover(); f != nil {
-			panic(fmt.Sprintf("%s,type:%s", f, d.DataType()))
+			panic(fmt.Sprintf("%s,type:%s", f, d.StoreType()))
 		}
 	}()
 	if d.NotNull {
-		return reflect.New(d.DataType()).Elem().Interface()
+		return reflect.New(d.StoreType()).Elem().Interface()
 	} else {
 		return NilValue
 	}
@@ -66,12 +101,15 @@ func (d *DataColumn) Clone() *DataColumn {
 	result = *d
 	return &result
 }
-func (d *DataColumn) DataType() reflect.Type {
+func (d *DataColumn) StoreType() reflect.Type {
 	if d.NotNull {
-		return d.dataType
+		return reflectType[d.dataType]
 	} else {
 		return InterfaceType
 	}
+}
+func (d *DataColumn) ReflectType() reflect.Type {
+	return reflectType[d.dataType]
 }
 func (d *DataColumn) EncodeString(value interface{}) string {
 	switch tv := value.(type) {
@@ -140,44 +178,44 @@ func (d *DataColumn) DecodeString(value string) (interface{}, error) {
 	}
 }
 
-func newDataColumn(name string, dataType reflect.Type, maxsize int, notnull bool) *DataColumn {
+func NewDataColumn(name string, dataType ColumnType, maxsize int, notnull bool) *DataColumn {
 	return &DataColumn{Name: name, dataType: dataType, NotNull: notnull, MaxSize: maxsize}
 }
 
 func StringColumn(name string, maxsize int, notnull bool) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(string("")), maxsize, notnull)
+	return NewDataColumn(name, String, maxsize, notnull)
 }
 func Float64Column(name string, notnull bool) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(float64(0)), 0, notnull)
+	return NewDataColumn(name, Float64, 0, notnull)
 }
 func Int64Column(name string, notnull bool) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(int64(0)), 0, notnull)
+	return NewDataColumn(name, Int64, 0, notnull)
 }
 func BoolColumn(name string, notnull bool) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(true), 0, notnull)
+	return NewDataColumn(name, Bool, 0, notnull)
 }
 func ByteaColumn(name string, notnull bool) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf([]byte{}), 0, notnull)
+	return NewDataColumn(name, Bytea, 0, notnull)
 }
 func TimeColumn(name string, notnull bool) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(time.Now()), 0, notnull)
+	return NewDataColumn(name, Time, 0, notnull)
 }
 
 func NewStringColumn(name string) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(string("")), 0, true)
+	return NewDataColumn(name, String, 0, true)
 }
 func NewFloat64Column(name string) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(float64(0)), 0, true)
+	return NewDataColumn(name, Float64, 0, true)
 }
 func NewInt64Column(name string) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(int64(0)), 0, true)
+	return NewDataColumn(name, Int64, 0, true)
 }
 func NewBoolColumn(name string) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(true), 0, true)
+	return NewDataColumn(name, Bool, 0, true)
 }
 func NewByteaColumn(name string) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf([]byte{}), 0, true)
+	return NewDataColumn(name, Bytea, 0, true)
 }
 func NewTimeColumn(name string) *DataColumn {
-	return newDataColumn(name, reflect.TypeOf(time.Now()), 0, true)
+	return NewDataColumn(name, Time, 0, true)
 }
