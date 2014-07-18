@@ -20,7 +20,9 @@ var (
 	ColumnExistsError = errors.New("the column exists")
 	RowNotFoundError  = errors.New("the row not found")
 	KeyValueExists    = errors.New("the key value aleary exists")
-	NilValue          = reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem())
+	InterfaceType     = reflect.TypeOf((*interface{})(nil)).Elem()
+	NilValue          = reflect.Zero(InterfaceType)
+	PtrNilValue       = reflect.New(InterfaceType)
 	//NotThisTableRow     = errors.New("the row not is this table's row")
 
 )
@@ -79,8 +81,8 @@ func NewDataTable(name string) *DataTable {
 func (d *DataTable) AddColumn(c *DataColumn) *DataColumn {
 
 	if i := d.ColumnIndex(c.Name); i == -1 {
-		d.currentRows.AddColumn(c.DataType)
-		d.deleteRows.AddColumn(c.DataType)
+		d.currentRows.AddColumn(c.DataType())
+		d.deleteRows.AddColumn(c.DataType())
 		for i := 0; i < len(d.originData); i++ {
 			d.originData[i] = append(d.originData[i], c.ZeroValue()) //use nil ,maybe error
 		}
@@ -135,7 +137,7 @@ func (d *DataTable) AcceptChange() {
 	d.originData = make([][]interface{}, d.currentRows.Count())
 	d.deleteRows = &dataRows{}
 	for _, c := range d.Columns {
-		d.deleteRows.AddColumn(c.DataType)
+		d.deleteRows.AddColumn(c.DataType())
 	}
 	d.changed = false
 }
@@ -170,6 +172,9 @@ func (d *DataTable) ColumnCount() int {
 	return len(d.Columns)
 }
 func (d *DataTable) SetValues(rowIndex int, values ...interface{}) (err error) {
+	if err := d.validValues(values); err != nil {
+		return err
+	}
 	newValues := values
 	if len(newValues) != d.ColumnCount() {
 		return NumberOfValueError(len(newValues), d.ColumnCount())
@@ -302,16 +307,6 @@ func (d *DataTable) GetColumnValues(columnIndex int) []interface{} {
 	}
 	return newValues
 }
-func (d *DataTable) GetColumnStrings(columnIndex int) []string {
-	if columnIndex < 0 || columnIndex >= d.ColumnCount() {
-		return []string{}
-	}
-	if d.Columns[columnIndex].DataType.Kind() == reflect.String {
-		return d.currentRows.data[columnIndex].([]string)
-	} else {
-		return safeToStrings(d.GetColumnValues(columnIndex)...)
-	}
-}
 func (d *DataTable) GetValue(rowIndex, colIndex int) interface{} {
 	return d.currentRows.Get(colIndex, d.primaryIndexes.trueIndex(rowIndex))
 }
@@ -403,10 +398,20 @@ func (d *DataTable) DeleteRow(rowIndex int) error {
 
 	return nil
 }
-
+func (d *DataTable) validValues(vs []interface{}) error {
+	for i, v := range vs {
+		if !d.Columns[i].Valid(v) {
+			return fmt.Errorf("the value %v(%T) not is type %s", v, v, d.Columns[i].dataType.String())
+		}
+	}
+	return nil
+}
 func (d *DataTable) AddValues(vs ...interface{}) (err error) {
 	if len(vs) != d.ColumnCount() {
 		return NumberOfValueError(len(vs), d.ColumnCount())
+	}
+	if err := d.validValues(vs); err != nil {
+		return err
 	}
 	data := vs
 	keyvalues := d.getPkValues(data)
@@ -506,8 +511,8 @@ func (d *DataTable) Clear() {
 	d.rowStatus = nil
 	d.originData = nil
 	for _, c := range d.Columns {
-		d.currentRows.AddColumn(c.DataType)
-		d.deleteRows.AddColumn(c.DataType)
+		d.currentRows.AddColumn(c.DataType())
+		d.deleteRows.AddColumn(c.DataType())
 	}
 	d.changed = false
 }
@@ -545,8 +550,8 @@ func (d *DataTable) Merge(srcTable *DataTable) error {
 		return fmt.Errorf("the src table columncount:%d not is %d", srcTable.ColumnCount(), d.ColumnCount())
 	}
 	for i, col := range d.Columns {
-		if !reflect.DeepEqual(srcTable.Columns[i].DataType, col.DataType) {
-			return fmt.Errorf("the column:%s data type %s not equal %s", col.Name, col.DataType.String(), srcTable.Columns[i].DataType)
+		if !reflect.DeepEqual(srcTable.Columns[i].DataType(), col.DataType()) {
+			return fmt.Errorf("the column:%s data type %s not equal %s", col.Name, col.DataType().String(), srcTable.Columns[i].DataType().String())
 		}
 	}
 	pks := make([]int, len(srcTable.primaryIndexes.index))

@@ -11,8 +11,9 @@ var DataTypeError = errors.New("datatype error")
 
 type DataColumn struct {
 	index    int
+	dataType reflect.Type `json:"-"`
 	Name     string
-	DataType reflect.Type `json:"-"`
+	NotNull  bool
 }
 
 func (d *DataColumn) Index() int {
@@ -23,30 +24,52 @@ func (d *DataColumn) Index() int {
 func (d *DataColumn) PtrZeroValue() interface{} {
 	defer func() {
 		if f := recover(); f != nil {
-			panic(fmt.Sprintf("%s,type:%s", f, d.DataType))
+			panic(fmt.Sprintf("%s,type:%s", f, d.DataType()))
 		}
 	}()
-	return reflect.New(d.DataType).Interface()
+	if d.NotNull {
+		return reflect.New(d.DataType()).Interface()
+	} else {
+		return PtrNilValue
+	}
+
+}
+func (d *DataColumn) Valid(value interface{}) bool {
+	if d.NotNull || value != nil {
+		return reflect.DeepEqual(reflect.TypeOf(value), d.dataType)
+	}
+	return true
 }
 func (d *DataColumn) ZeroValue() interface{} {
 	defer func() {
 		if f := recover(); f != nil {
-			panic(fmt.Sprintf("%s,type:%s", f, d.DataType))
+			panic(fmt.Sprintf("%s,type:%s", f, d.DataType()))
 		}
 	}()
-	return reflect.New(d.DataType).Elem().Interface()
+	if d.NotNull {
+		return reflect.New(d.DataType()).Elem().Interface()
+	} else {
+		return NilValue
+	}
 }
 func (d *DataColumn) Clone() *DataColumn {
 	result := DataColumn{}
 	result = *d
 	return &result
 }
+func (d *DataColumn) DataType() reflect.Type {
+	if d.NotNull {
+		return d.dataType
+	} else {
+		return InterfaceType
+	}
+}
 
 func NewDataColumn(name string, dataType reflect.Type) *DataColumn {
-	return &DataColumn{Name: name, DataType: dataType}
+	return &DataColumn{Name: name, dataType: dataType, NotNull: true}
 }
-func NewDataColumnV(name string) *DataColumn {
-	return &DataColumn{Name: name, DataType: reflect.TypeOf((*interface{})(nil)).Elem()}
+func NewDataColumnN(name string, dataType reflect.Type) *DataColumn {
+	return &DataColumn{Name: name, dataType: dataType, NotNull: false}
 }
 func NewStringColumn(name string) *DataColumn {
 	return NewDataColumn(name, reflect.TypeOf(string("")))
