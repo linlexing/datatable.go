@@ -10,50 +10,31 @@ import (
 )
 
 const (
-	String ColumnType = iota
-	Int64
-	Float64
-	Bool
-	Time
-	Bytea
+	String  ColumnType = "string"
+	Int64   ColumnType = "int64"
+	Float64 ColumnType = "float64"
+	Bool    ColumnType = "bool"
+	Time    ColumnType = "time"
+	Bytea   ColumnType = "bytea"
 )
 
-type ColumnType int
-
-func (c ColumnType) String() string {
-	switch c {
-	case String:
-		return "string"
-	case Int64:
-		return "int64"
-	case Float64:
-		return "float64"
-	case Bool:
-		return "bool"
-	case Time:
-		return "time"
-	case Bytea:
-		return "bytea"
-	default:
-		return "error"
-	}
-}
+type ColumnType string
 
 type DataColumn struct {
 	index    int
-	dataType ColumnType
+	DataType ColumnType
 	Name     string
 	MaxSize  int
 	NotNull  bool
 }
 
-var reflectType []reflect.Type = []reflect.Type{
-	reflect.TypeOf(""),
-	reflect.TypeOf(int64(0)),
-	reflect.TypeOf(float64(0)),
-	reflect.TypeOf(true),
-	reflect.TypeOf(time.Time{}),
-	reflect.TypeOf([]byte{})}
+var reflectType map[ColumnType]reflect.Type = map[ColumnType]reflect.Type{
+	String:  reflect.TypeOf(""),
+	Int64:   reflect.TypeOf(int64(0)),
+	Float64: reflect.TypeOf(float64(0)),
+	Bool:    reflect.TypeOf(true),
+	Time:    reflect.TypeOf(time.Time{}),
+	Bytea:   reflect.TypeOf([]byte{})}
 
 func (d *DataColumn) Index() int {
 	return d.index
@@ -79,7 +60,7 @@ func (d *DataColumn) Valid(value interface{}) error {
 			return fmt.Errorf("the value %v(%T) not is type %s", value, value, d.ReflectType().String())
 		}
 	}
-	if value != nil && d.MaxSize > 0 && d.dataType == String && len(value.(string)) > d.MaxSize {
+	if value != nil && d.MaxSize > 0 && d.DataType == String && len(value.(string)) > d.MaxSize {
 		return fmt.Errorf("the value %q(%T) length %d > maxsize(%d)", value, value, len(value.(string)), d.MaxSize)
 	}
 	return nil
@@ -103,13 +84,13 @@ func (d *DataColumn) Clone() *DataColumn {
 }
 func (d *DataColumn) StoreType() reflect.Type {
 	if d.NotNull {
-		return reflectType[d.dataType]
+		return reflectType[d.DataType]
 	} else {
 		return InterfaceType
 	}
 }
 func (d *DataColumn) ReflectType() reflect.Type {
-	return reflectType[d.dataType]
+	return reflectType[d.DataType]
 }
 func (d *DataColumn) EncodeString(value interface{}) string {
 	switch tv := value.(type) {
@@ -179,7 +160,7 @@ func (d *DataColumn) DecodeString(value string) (interface{}, error) {
 }
 
 func NewDataColumn(name string, dataType ColumnType, maxsize int, notnull bool) *DataColumn {
-	return &DataColumn{Name: name, dataType: dataType, NotNull: notnull, MaxSize: maxsize}
+	return &DataColumn{Name: name, DataType: dataType, NotNull: notnull, MaxSize: maxsize}
 }
 
 func StringColumn(name string, maxsize int, notnull bool) *DataColumn {

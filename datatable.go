@@ -550,8 +550,8 @@ func (d *DataTable) Merge(srcTable *DataTable) error {
 		return fmt.Errorf("the src table columncount:%d not is %d", srcTable.ColumnCount(), d.ColumnCount())
 	}
 	for i, col := range d.Columns {
-		if srcTable.Columns[i].dataType != col.dataType {
-			return fmt.Errorf("the column:%s data type %s not equal %s", col.Name, col.dataType, srcTable.Columns[i].dataType)
+		if srcTable.Columns[i].DataType != col.DataType {
+			return fmt.Errorf("the column:%s data type %s not equal %s", col.Name, col.DataType, srcTable.Columns[i].DataType)
 		}
 	}
 	pks := make([]int, len(srcTable.primaryIndexes.index))
