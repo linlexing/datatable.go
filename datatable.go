@@ -318,6 +318,13 @@ func (d *DataTable) Row(rowIndex int) map[string]interface{} {
 	}
 	return result
 }
+func (d *DataTable) Rows() []map[string]interface{} {
+	rev := make([]map[string]interface{}, d.RowCount())
+	for i := 0; i < d.RowCount(); i++ {
+		rev[i] = d.Row(i)
+	}
+	return rev
+}
 func (d *DataTable) UpdateRow(rowIndex int, r map[string]interface{}) error {
 	return d.SetValues(rowIndex, d.getSequenceValues(r)...)
 }
