@@ -22,7 +22,6 @@ var (
 	KeyValueExists    = errors.New("the key value aleary exists")
 	InterfaceType     = reflect.TypeOf((*interface{})(nil)).Elem()
 	NilValue          = reflect.Zero(InterfaceType)
-	PtrNilValue       = reflect.New(InterfaceType)
 	//NotThisTableRow     = errors.New("the row not is this table's row")
 
 )
@@ -56,16 +55,15 @@ type pkIndex struct {
 }
 
 type DataTable struct {
-	TableName        string
-	PKConstraintName string
-	changed          bool
-	Columns          []*DataColumn
-	PK               []string
-	currentRows      *dataRows
-	primaryIndexes   pkIndex
-	rowStatus        []byte
-	originData       [][]interface{}
-	deleteRows       *dataRows
+	TableName      string
+	changed        bool
+	Columns        []*DataColumn
+	PK             []string
+	currentRows    *dataRows
+	primaryIndexes pkIndex
+	rowStatus      []byte
+	originData     [][]interface{}
+	deleteRows     *dataRows
 }
 
 func NewDataTable(name string) *DataTable {
@@ -146,7 +144,11 @@ func (d *DataTable) RowCount() int {
 	return d.currentRows.Count()
 }
 func (d *DataTable) GetValues(rowIndex int) []interface{} {
-	return d.currentRows.GetRow(d.primaryIndexes.trueIndex(rowIndex))
+	rev := make([]interface{}, d.ColumnCount())
+	for i, v := range d.currentRows.GetRow(d.primaryIndexes.trueIndex(rowIndex)) {
+		rev[i] = d.Columns[i].Decode(v)
+	}
+	return rev
 }
 func (d *DataTable) getSequenceValues(r map[string]interface{}) []interface{} {
 	vals := make([]interface{}, d.ColumnCount())
@@ -171,11 +173,11 @@ func (d *DataTable) getPkValues(values []interface{}) []interface{} {
 func (d *DataTable) ColumnCount() int {
 	return len(d.Columns)
 }
-func (d *DataTable) SetValues(rowIndex int, values ...interface{}) (err error) {
-	if err := d.validValues(values); err != nil {
+func (d *DataTable) SetValues(rowIndex int, values ...interface{}) error {
+	newValues, err := d.validValues(values)
+	if err != nil {
 		return err
 	}
-	newValues := values
 	if len(newValues) != d.ColumnCount() {
 		return NumberOfValueError(len(newValues), d.ColumnCount())
 	}
@@ -206,7 +208,7 @@ func (d *DataTable) SetValues(rowIndex int, values ...interface{}) (err error) {
 	if pkChanged {
 		d.primaryIndexes.changeIndex(rowIndex, newKeyIndex)
 	}
-	return
+	return nil
 }
 
 func (d *DataTable) search(keyValues ...interface{}) int {
@@ -303,12 +305,12 @@ func (d *DataTable) GetColumnValues(columnIndex int) []interface{} {
 	newValues := make([]interface{}, icount, icount)
 	for i := 0; i < icount; i++ {
 		v := reflect.ValueOf(d.currentRows.data[columnIndex]).Index(i)
-		newValues[i] = v.Interface()
+		newValues[i] = d.Columns[columnIndex].Decode(v.Interface())
 	}
 	return newValues
 }
 func (d *DataTable) GetValue(rowIndex, colIndex int) interface{} {
-	return d.currentRows.Get(colIndex, d.primaryIndexes.trueIndex(rowIndex))
+	return d.Columns[colIndex].Decode(d.currentRows.Get(colIndex, d.primaryIndexes.trueIndex(rowIndex)))
 }
 func (d *DataTable) Row(rowIndex int) map[string]interface{} {
 	vals := d.GetValues(rowIndex)
@@ -405,22 +407,24 @@ func (d *DataTable) DeleteRow(rowIndex int) error {
 
 	return nil
 }
-func (d *DataTable) validValues(vs []interface{}) error {
+func (d *DataTable) validValues(vs []interface{}) ([]interface{}, error) {
+	rev := make([]interface{}, len(vs))
 	for i, v := range vs {
 		if err := d.Columns[i].Valid(v); err != nil {
-			return err
+			return nil, err
 		}
+		rev[i] = d.Columns[i].Encode(v)
 	}
-	return nil
+	return rev, nil
 }
-func (d *DataTable) AddValues(vs ...interface{}) (err error) {
+func (d *DataTable) AddValues(vs ...interface{}) error {
 	if len(vs) != d.ColumnCount() {
 		return NumberOfValueError(len(vs), d.ColumnCount())
 	}
-	if err := d.validValues(vs); err != nil {
+	data, err := d.validValues(vs)
+	if err != nil {
 		return err
 	}
-	data := vs
 	keyvalues := d.getPkValues(data)
 	newKeyIndex := d.primaryIndexes.Search(keyvalues)
 	if len(d.PK) > 0 && newKeyIndex < d.primaryIndexes.Len() &&
@@ -433,7 +437,7 @@ func (d *DataTable) AddValues(vs ...interface{}) (err error) {
 	d.rowStatus = append(d.rowStatus, INSERT)
 	d.originData = append(d.originData, nil)
 	d.primaryIndexes.appendIndex(newKeyIndex, newIndex)
-	return
+	return nil
 
 }
 func (d *DataTable) AddRow(r map[string]interface{}) error {
