@@ -97,7 +97,7 @@ func CreateTestData() *DataTable {
 	table.SetPK("column1", "column2")
 	table.AddValues("first", int64(10), "test1")
 	table.AddValues("second", int64(1), "test")
-	table.AddValues("aaa", int64(10), "test1")
+	table.AddValues("aa,\"'`a", int64(10), "test1")
 	table.AddValues("bbb", int64(10), "test1")
 	table.AddValues("first", int64(11), "test1")
 	return table
@@ -363,6 +363,14 @@ func ExampleDataTable_AddValues() {
 	//row9	9
 	//row10	10
 
+}
+func TestAsCsv(t *testing.T) {
+	tab := CreateTestData()
+	fmt.Print(tab.AsCsv(tab.ColumnNames()...))
+}
+func TestAsJSONP(t *testing.T) {
+	tab := CreateTestData()
+	fmt.Print(tab.AsJSONP("data", tab.ColumnNames()...))
 }
 func TestGetColumnValues(t *testing.T) {
 	table := NewDataTable("table1")

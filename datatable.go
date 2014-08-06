@@ -2,6 +2,9 @@
 package datatable
 
 import (
+	"bytes"
+	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -112,9 +115,9 @@ func (d *DataTable) HasPrimaryKey() bool {
 	return len(d.PK) > 0
 }
 func (d *DataTable) ColumnNames() []string {
-	r := []string{}
-	for _, v := range d.Columns {
-		r = append(r, v.Name)
+	r := make([]string, d.ColumnCount())
+	for i, v := range d.Columns {
+		r[i] = v.Name
 	}
 	return r
 }
@@ -272,6 +275,63 @@ func stringInSlice(a string, list []string) bool {
 	}
 	return false
 }
+func (d *DataTable) AsCsv(columns ...string) string {
+	bys := &bytes.Buffer{}
+	csvWriter := csv.NewWriter(bys)
+	line := make([]string, len(columns))
+	for i, v := range columns {
+		line[i] = v
+	}
+	if err := csvWriter.Write(line); err != nil {
+		panic(err)
+	}
+	for rowIdx := 0; rowIdx < d.RowCount(); rowIdx++ {
+		for i, v := range columns {
+			colIdx := d.ColumnIndex(v)
+			line[i] = d.Columns[colIdx].EncodeString(d.GetValue(rowIdx, colIdx))
+		}
+		if err := csvWriter.Write(line); err != nil {
+			panic(err)
+		}
+	}
+	csvWriter.Flush()
+	return bys.String()
+}
+func (d *DataTable) AsJSONP(callback string, columns ...string) string {
+	data := make([]interface{}, d.RowCount())
+	for rowIdx := 0; rowIdx < d.RowCount(); rowIdx++ {
+		line := make([]interface{}, len(columns))
+		for i, v := range columns {
+			colIdx := d.ColumnIndex(v)
+			line[i] = d.GetValue(rowIdx, colIdx)
+		}
+		data[rowIdx] = line
+	}
+	bys, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+	cols, err := json.Marshal(columns)
+	if err != nil {
+		panic(err)
+	}
+
+	return fmt.Sprintf(`
+function %s(){
+	data = %s;
+	cols = %s;
+	rev = [];
+	for(rowIndex in data){
+		rowObject = {};
+		for(colIndex in cols){
+			rowObject[cols[colIndex]] = data[rowIndex][colIndex];
+		}
+		rev.push(rowObject);
+	}
+	return rev;
+}`, callback, string(bys), string(cols))
+}
+
 func (d *DataTable) AsTabText(columns ...string) string {
 	result := []string{}
 	if len(columns) > 0 {
