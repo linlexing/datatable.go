@@ -48,7 +48,8 @@ func (d *DataColumn) Index() int {
 
 func (d *DataColumn) Valid(value interface{}) error {
 	if d.NotNull || value != nil {
-		if d.DataType == String {
+		switch d.DataType {
+		case String:
 			switch tv := value.(type) {
 			case string:
 				if d.MaxSize > 0 && len(tv) > d.MaxSize {
@@ -66,12 +67,19 @@ func (d *DataColumn) Valid(value interface{}) error {
 			default:
 				return fmt.Errorf("the column %q value %v(%T) not is type %s", d.Name, value, value, d.ReflectType().String())
 			}
-		} else if !reflect.DeepEqual(reflect.TypeOf(value), d.ReflectType()) {
-			return fmt.Errorf("the column %q value %v(%T) not is type %s", d.Name, value, value, d.ReflectType().String())
+		case Bool:
+			switch value.(type) {
+			case []byte, bool:
+				return nil
+			default:
+				return fmt.Errorf("the column %q value %v(%T) not is type %s", d.Name, value, value, d.ReflectType().String())
+			}
+		default:
+			if !reflect.DeepEqual(reflect.TypeOf(value), d.ReflectType()) {
+				return fmt.Errorf("the column %q value %v(%T) not is type %s", d.Name, value, value, d.ReflectType().String())
+			}
 		}
-	}
-	if value != nil && d.MaxSize > 0 && d.DataType == String && len(value.(string)) > d.MaxSize {
-		return fmt.Errorf("the value %q(%T) length %d > maxsize(%d)", value, value, len(value.(string)), d.MaxSize)
+
 	}
 	return nil
 }
@@ -210,8 +218,18 @@ func (d *DataColumn) Encode(v interface{}) interface{} {
 					panic(fmt.Errorf("can't convert src --> dest:%T -- > string", v))
 				}
 			case Bool:
-				tv := v.(bool)
-				return &tv
+				switch tv := v.(type) {
+				case bool:
+					return &tv
+				case []byte:
+					vrev := true
+					if tv[0] == 0 {
+						vrev = false
+					}
+					return &vrev
+				default:
+					panic(fmt.Errorf("can't convert src --> dest:%T -- > bool", v))
+				}
 			case Int64:
 				tv := v.(int64)
 				return &tv
