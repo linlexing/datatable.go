@@ -372,6 +372,9 @@ func (d *DataTable) GetColumnValues(columnIndex int) []interface{} {
 func (d *DataTable) GetValue(rowIndex, colIndex int) interface{} {
 	return d.Columns[colIndex].Decode(d.currentRows.Get(colIndex, d.primaryIndexes.trueIndex(rowIndex)))
 }
+func (d *DataTable) GetString(rowIndex, colIndex int) string {
+	return d.Columns[colIndex].EncodeString(d.GetValue(rowIndex, colIndex))
+}
 func (d *DataTable) Row(rowIndex int) map[string]interface{} {
 	vals := d.GetValues(rowIndex)
 	result := map[string]interface{}{}
