@@ -428,7 +428,7 @@ func (d *DataTable) getChangeDelete() []*ChangeRow {
 	for i := 0; i < d.deleteRows.Count(); i++ {
 
 		result = append(result, &ChangeRow{
-			Data: d.deleteRows.GetRow(i),
+			OriginData: d.deleteRows.GetRow(i),
 		})
 	}
 	return result
