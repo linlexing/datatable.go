@@ -275,6 +275,8 @@ func stringInSlice(a string, list []string) bool {
 	}
 	return false
 }
+
+//Exports as CSV, if no columns provided it will use all columns
 func (d *DataTable) AsCsv(columns ...string) string {
 	bys := &bytes.Buffer{}
 	csvWriter := csv.NewWriter(bys)

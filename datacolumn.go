@@ -110,12 +110,14 @@ func (d *DataColumn) StoreType() reflect.Type {
 func (d *DataColumn) ReflectType() reflect.Type {
 	return reflectType[d.DataType]
 }
+
+//Encodes strings, raw strings will be encoded with double quotes
 func (d *DataColumn) EncodeString(value interface{}) string {
 	switch tv := value.(type) {
 	case nil:
 		return ""
 	case string:
-		return tv
+		return fmt.Sprintf("%q", tv)
 	case []byte:
 		if len(tv) == 0 {
 			return ""
