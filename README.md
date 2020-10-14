@@ -2,8 +2,10 @@ datatable.go
 ============
 
 A memory table, similar to. Net DataTable
+Forked from https://github.com/linlexing/datatable.go
+Thank you to linlexing for such a great repo. Forked to add additional functions that are missing and to bring it to feature parity with the .net DataTable
 
-http://godoc.org/github.com/linlexing/datatable.go
+http://godoc.org/github.com/cohenoshri/datatable.go
 
 #### exemple for base:
 

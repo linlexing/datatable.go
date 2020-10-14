@@ -278,7 +278,14 @@ func stringInSlice(a string, list []string) bool {
 func (d *DataTable) AsCsv(columns ...string) string {
 	bys := &bytes.Buffer{}
 	csvWriter := csv.NewWriter(bys)
-	line := make([]string, len(columns))
+	var line []string
+	if len(columns) > 0 {
+		line = make([]string, len(columns))
+	} else {
+		line = make([]string, len(d.ColumnNames()))
+		columns = d.ColumnNames()
+	}
+
 	for i, v := range columns {
 		line[i] = v
 	}
