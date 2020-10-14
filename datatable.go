@@ -158,7 +158,7 @@ func (d *DataTable) getSequenceValues(r map[string]interface{}) []interface{} {
 	for i, col := range d.Columns {
 		var ok bool
 		if vals[i], ok = r[col.Name]; !ok {
-			panic(fmt.Errorf("can't find column:[%s] at %v", col.Name, r))
+			//panic(fmt.Errorf("can't find column:[%s] at %v", col.Name, r))
 		}
 
 	}
