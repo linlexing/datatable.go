@@ -367,6 +367,8 @@ func ExampleDataTable_AddValues() {
 func TestAsCsv(t *testing.T) {
 	tab := CreateTestData()
 	fmt.Print(tab.AsCsv(tab.ColumnNames()...))
+	fmt.Println("no columns")
+	fmt.Print(tab.AsCsv())
 }
 func TestAsJSONP(t *testing.T) {
 	tab := CreateTestData()

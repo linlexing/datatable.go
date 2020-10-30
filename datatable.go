@@ -275,19 +275,38 @@ func stringInSlice(a string, list []string) bool {
 	}
 	return false
 }
-func (d *DataTable) AsCsv(columns ...string) string {
+
+//AsCsv Exports as CSV, if no columns provided it will use all columns
+func (d *DataTable) AsCsv(filterCols ...string) string {
 	bys := &bytes.Buffer{}
 	csvWriter := csv.NewWriter(bys)
-	line := make([]string, len(columns))
-	for i, v := range columns {
+	var outCols []string
+	var outColIndex []int //the column index
+	if len(filterCols) > 0 {
+		outCols = filterCols
+		outColIndex = make([]int, len(filterCols))
+		for i, v := range outCols {
+			colIdx := d.ColumnIndex(v)
+			outColIndex[i] = colIdx
+		}
+	} else {
+		outCols = make([]string, d.ColumnCount())
+		outColIndex = make([]int, d.ColumnCount())
+		for i, v := range d.Columns {
+			outCols[i] = v.Name
+			outColIndex[i] = i
+		}
+	}
+	line := make([]string, len(outCols))
+	//write the head line
+	for i, v := range outCols {
 		line[i] = v
 	}
 	if err := csvWriter.Write(line); err != nil {
 		panic(err)
 	}
 	for rowIdx := 0; rowIdx < d.RowCount(); rowIdx++ {
-		for i, v := range columns {
-			colIdx := d.ColumnIndex(v)
+		for i, colIdx := range outColIndex {
 			line[i] = d.Columns[colIdx].EncodeString(d.GetValue(rowIdx, colIdx))
 		}
 		if err := csvWriter.Write(line); err != nil {
